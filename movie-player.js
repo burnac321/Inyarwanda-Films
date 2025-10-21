@@ -1,4 +1,4 @@
-// movie-player.js - YouTube-style thumbnail with play button
+// movie-player.js - Final version with video controls & clean layout
 class MoviePlayer {
     constructor() {
         this.movieData = null;
@@ -164,75 +164,83 @@ class MoviePlayer {
                 /* Hide Odysee logo and controls */
                 .video-iframe.odysee {
                     position: absolute !important;
-                    top: -60px !important; /* Hide Odysee header */
+                    top: -60px !important;
                     height: calc(100% + 120px) !important;
                 }
                 
-                .movie-layout {
-                    display: grid;
-                    grid-template-columns: 1fr;
-                    gap: 2rem;
+                /* Video Info Section */
+                .video-info {
+                    padding: 1.5rem;
+                    background: #1a1a1a;
+                    border-radius: 0 0 12px 12px;
+                    border-top: 2px solid #008753;
                 }
                 
-                @media (min-width: 1024px) {
-                    .movie-layout {
-                        grid-template-columns: 350px 1fr;
-                    }
-                }
-                
-                .poster-section img {
-                    width: 100%;
-                    border-radius: 12px;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-                }
-                
-                .details-section {
-                    color: white;
-                }
-                
-                .movie-title {
-                    font-size: 2.5rem;
+                .video-title {
+                    font-size: 1.8rem;
                     font-weight: bold;
-                    margin-bottom: 1rem;
-                    line-height: 1.2;
                     color: white;
+                    margin-bottom: 1rem;
+                    line-height: 1.3;
                 }
                 
-                .movie-badges {
+                .video-stats {
                     display: flex;
-                    gap: 0.75rem;
-                    margin-bottom: 1.5rem;
+                    gap: 1rem;
+                    margin-bottom: 1rem;
                     flex-wrap: wrap;
                 }
                 
-                .badge {
-                    padding: 0.5rem 1rem;
-                    border-radius: 25px;
+                .stat {
+                    color: #ccc;
                     font-size: 0.9rem;
-                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
                 }
                 
-                .movie-description {
-                    font-size: 1.1rem;
-                    line-height: 1.6;
+                .video-description {
                     color: #e0e0e0;
-                    margin-bottom: 2rem;
+                    line-height: 1.6;
+                    font-size: 1rem;
                 }
                 
-                .movie-meta-grid {
+                .movie-details {
                     display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 1.5rem;
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                    gap: 2rem;
+                    margin-bottom: 3rem;
+                }
+                
+                .details-card {
                     background: #1a1a1a;
                     padding: 2rem;
                     border-radius: 12px;
                     border: 1px solid #333;
                 }
                 
+                .details-card h2 {
+                    color: #FAD201;
+                    font-size: 1.5rem;
+                    margin-bottom: 1.5rem;
+                    border-bottom: 2px solid #008753;
+                    padding-bottom: 0.5rem;
+                }
+                
+                .meta-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 1rem;
+                }
+                
+                .meta-item {
+                    margin-bottom: 1rem;
+                }
+                
                 .meta-item strong {
                     color: #FAD201;
                     display: block;
-                    margin-bottom: 0.5rem;
+                    margin-bottom: 0.25rem;
                     font-size: 0.9rem;
                 }
                 
@@ -240,6 +248,30 @@ class MoviePlayer {
                     color: white;
                     margin: 0;
                     font-size: 1rem;
+                }
+                
+                .cast-crew {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 1rem;
+                }
+                
+                .cast-item {
+                    background: #252525;
+                    padding: 1rem;
+                    border-radius: 8px;
+                    border-left: 4px solid #008753;
+                }
+                
+                .cast-item strong {
+                    color: #FAD201;
+                    display: block;
+                    margin-bottom: 0.5rem;
+                }
+                
+                .cast-item p {
+                    color: white;
+                    margin: 0;
                 }
                 
                 .related-section {
@@ -318,30 +350,25 @@ class MoviePlayer {
                         <div class="video-container">
                             ${this.renderVideoPlayer()}
                         </div>
+                        <div class="video-info">
+                            <h1 class="video-title">${this.movieData.title}</h1>
+                            <div class="video-stats">
+                                <span class="stat">📅 ${this.movieData.releaseYear}</span>
+                                <span class="stat">⏱️ ${this.movieData.duration}</span>
+                                <span class="stat">🗣️ ${this.movieData.language}</span>
+                                <span class="stat">🎬 ${this.movieData.quality}</span>
+                                <span class="stat">⭐ ${this.movieData.rating}</span>
+                            </div>
+                            <p class="video-description">${this.movieData.description}</p>
+                        </div>
                     </div>
                     
-                    <div class="movie-layout">
-                        <!-- Poster Section -->
-                        <div class="poster-section">
-                            <img src="${this.movieData.posterUrl}" alt="${this.movieData.title}" 
-                                 onerror="this.src='https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=400&h=600&fit=crop'">
-                        </div>
-                        
-                        <!-- Details Section -->
-                        <div class="details-section">
-                            <h1 class="movie-title">${this.movieData.title}</h1>
-                            
-                            <div class="movie-badges">
-                                <span class="badge" style="background:#008753; color:white;">${this.movieData.releaseYear}</span>
-                                <span class="badge" style="background:#FAD201; color:#000;">${this.movieData.duration}</span>
-                                <span class="badge" style="background:#00A1DE; color:white;">${this.movieData.language}</span>
-                                <span class="badge" style="background:#6c757d; color:white;">${this.movieData.quality}</span>
-                                <span class="badge" style="background:#dc3545; color:white;">${this.movieData.rating}</span>
-                            </div>
-                            
-                            <p class="movie-description">${this.movieData.description}</p>
-                            
-                            <div class="movie-meta-grid">
+                    <!-- Movie Details Grid -->
+                    <div class="movie-details">
+                        <!-- Movie Information -->
+                        <div class="details-card">
+                            <h2>Movie Information</h2>
+                            <div class="meta-grid">
                                 <div class="meta-item">
                                     <strong>Category</strong>
                                     <p>${this.movieData.category.charAt(0).toUpperCase() + this.movieData.category.slice(1)}</p>
@@ -350,22 +377,48 @@ class MoviePlayer {
                                     <strong>Language</strong>
                                     <p>${this.movieData.language}</p>
                                 </div>
-                                ${this.movieData.director ? `
                                 <div class="meta-item">
+                                    <strong>Quality</strong>
+                                    <p>${this.movieData.quality}</p>
+                                </div>
+                                <div class="meta-item">
+                                    <strong>Content Rating</strong>
+                                    <p>${this.movieData.rating}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cast & Crew -->
+                        <div class="details-card">
+                            <h2>Cast & Crew</h2>
+                            <div class="cast-crew">
+                                ${this.movieData.director ? `
+                                <div class="cast-item">
                                     <strong>Director</strong>
                                     <p>${this.movieData.director}</p>
                                 </div>
                                 ` : ''}
                                 ${this.movieData.producer ? `
-                                <div class="meta-item">
+                                <div class="cast-item">
                                     <strong>Producer</strong>
                                     <p>${this.movieData.producer}</p>
                                 </div>
                                 ` : ''}
                                 ${this.movieData.mainCast ? `
-                                <div class="meta-item" style="grid-column: 1 / -1;">
+                                <div class="cast-item" style="grid-column: 1 / -1;">
                                     <strong>Main Cast</strong>
                                     <p>${this.movieData.mainCast}</p>
+                                </div>
+                                ` : ''}
+                                ${this.movieData.supportingCast ? `
+                                <div class="cast-item" style="grid-column: 1 / -1;">
+                                    <strong>Supporting Cast</strong>
+                                    <p>${this.movieData.supportingCast}</p>
+                                </div>
+                                ` : ''}
+                                ${!this.movieData.director && !this.movieData.producer && !this.movieData.mainCast ? `
+                                <div class="cast-item" style="grid-column: 1 / -1;">
+                                    <p>Cast information not available</p>
                                 </div>
                                 ` : ''}
                             </div>
@@ -414,7 +467,9 @@ class MoviePlayer {
             <iframe class="video-iframe ${isOdysee ? 'odysee' : ''}" 
                     id="videoFrame" 
                     style="display: none;"
-                    allowfullscreen>
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                    title="Watch ${this.movieData.title}">
             </iframe>
         `;
     }
@@ -432,7 +487,7 @@ class MoviePlayer {
             if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
                 const videoId = this.extractYouTubeId(videoUrl);
                 if (videoId) {
-                    embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+                    embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=1&showinfo=0`;
                 }
             } else if (videoUrl.includes('odysee.com')) {
                 embedUrl = videoUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/') + '?autoplay=1';
@@ -495,7 +550,7 @@ class MoviePlayer {
                 .filter((movie, index, self) => 
                     index === self.findIndex(m => m.slug === movie.slug)
                 )
-                .slice(0, 4); // Show max 4 related movies
+                .slice(0, 4);
             
         } catch (error) {
             console.error('Error loading related movies:', error);
@@ -551,7 +606,9 @@ class MoviePlayer {
             { property: 'og:description', content: this.movieData.metaDescription || this.movieData.description },
             { property: 'og:image', content: this.movieData.posterUrl },
             { property: 'og:url', content: window.location.href },
-            { property: 'og:type', content: 'video.movie' }
+            { property: 'og:type', content: 'video.movie' },
+            { property: 'og:video', content: this.movieData.videoUrl },
+            { property: 'og:video:duration', content: this.extractMinutes(this.movieData.duration) }
         ];
 
         ogTags.forEach(tag => {
@@ -575,7 +632,12 @@ class MoviePlayer {
             "duration": this.movieData.duration,
             "contentRating": this.movieData.rating,
             "inLanguage": this.movieData.language,
-            "url": window.location.href
+            "genre": this.movieData.category,
+            "url": window.location.href,
+            "potentialAction": {
+                "@type": "WatchAction",
+                "target": this.movieData.videoUrl
+            }
         };
 
         const existingScript = document.querySelector('script[type="application/ld+json"]');
@@ -585,6 +647,11 @@ class MoviePlayer {
         script.type = 'application/ld+json';
         script.text = JSON.stringify(structuredData);
         document.head.appendChild(script);
+    }
+
+    extractMinutes(duration) {
+        const match = duration.match(/(\d+)\s*min/);
+        return match ? parseInt(match[1]) * 60 : 1800;
     }
 
     showError(message) {
