@@ -1,43 +1,97 @@
-// movie-player.js - Standalone SEO-optimized movie page generator
+// movie-player.js - Dynamic SEO Movie Page Generator
 class MoviePlayer {
     constructor() {
         this.movieData = null;
         this.relatedMovies = [];
         this.currentCategory = '';
         this.currentSlug = '';
-        this.videoPlaying = false;
         this.init();
     }
 
     async init() {
-        // Generate complete HTML structure
-        this.generateBaseHTML();
         await this.loadMovieFromURL();
-        this.renderMoviePlayer();
-        this.loadRelatedMovies();
-        this.setupSEO();
+        if (this.movieData) {
+            this.generateCompletePage();
+            this.setupVideoPlayer();
+            await this.loadRelatedMovies();
+        }
     }
 
-    generateBaseHTML() {
-        // Create complete HTML document structure
-        document.documentElement.innerHTML = `
-<!DOCTYPE html>
-<html lang="rw" itemscope itemtype="https://schema.org/WebPage">
+    async loadMovieFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        this.currentCategory = urlParams.get('category');
+        this.currentSlug = urlParams.get('slug');
+
+        if (!this.currentCategory || !this.currentSlug) {
+            this.showError('Movie parameters missing');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/content/movies/${this.currentCategory}/${this.currentSlug}.md`);
+            if (!response.ok) throw new Error('Movie not found');
+            
+            const markdownContent = await response.text();
+            this.movieData = this.parseMovieData(markdownContent);
+            
+        } catch (error) {
+            this.showError('Failed to load movie: ' + error.message);
+        }
+    }
+
+    parseMovieData(markdownContent) {
+        const frontMatterMatch = markdownContent.match(/^---\n([\s\S]*?)\n---/);
+        if (!frontMatterMatch) throw new Error('Invalid movie format');
+
+        const frontMatter = frontMatterMatch[1];
+        const data = {};
+        
+        frontMatter.split('\n').forEach(line => {
+            const match = line.match(/(\w+):\s*(.*)/);
+            if (match) {
+                let [, key, value] = match;
+                value = value.replace(/^["'](.*)["']$/, '$1').trim();
+                
+                if (key === 'tags' && value.startsWith('[')) {
+                    try { value = JSON.parse(value); } catch (e) { value = []; }
+                }
+                if (key === 'releaseYear') value = parseInt(value);
+                
+                data[key] = value;
+            }
+        });
+
+        return data;
+    }
+
+    generateCompletePage() {
+        document.documentElement.innerHTML = `<!DOCTYPE html>
+<html lang="rw" itemscope itemtype="http://schema.org/WebPage">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading Movie - Rwanda Cinema | Rwandan Movies Streaming</title>
-    <meta name="description" content="Watch Rwandan movies online. Stream latest Kinyarwanda films, comedies, dramas and documentaries.">
-    <meta name="keywords" content="Rwandan movies, Rwanda cinema, Kinyarwanda films, African movies, streaming">
-    <meta name="robots" content="index, follow">
+    <title>${this.escapeHTML(this.movieData.title)} - Rwanda Cinema | Rwandan ${this.capitalizeFirst(this.movieData.category)} Movies</title>
+    <meta name="description" content="${this.escapeHTML(this.movieData.metaDescription || this.movieData.description)}">
+    <meta name="keywords" content="${this.generateKeywords()}">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="author" content="Rwanda Cinema">
     
     <!-- OpenGraph Meta Tags -->
+    <meta property="og:title" content="${this.escapeHTML(this.movieData.title)}">
+    <meta property="og:description" content="${this.escapeHTML(this.movieData.metaDescription || this.movieData.description)}">
+    <meta property="og:image" content="${this.movieData.posterUrl}">
+    <meta property="og:url" content="${window.location.href}">
+    <meta property="og:type" content="video.movie">
     <meta property="og:site_name" content="Rwanda Cinema">
-    <meta property="og:type" content="website">
     <meta property="og:locale" content="rw_RW">
+    <meta property="og:video" content="${this.movieData.videoUrl}">
+    <meta property="og:video:duration" content="${this.extractSeconds(this.movieData.duration)}">
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="${this.escapeHTML(this.movieData.title)}">
+    <meta name="twitter:description" content="${this.escapeHTML(this.movieData.metaDescription || this.movieData.description)}">
+    <meta name="twitter:image" content="${this.movieData.posterUrl}">
     <meta name="twitter:site" content="@RwandaCinema">
     
     <!-- Canonical URL -->
@@ -56,6 +110,7 @@ class MoviePlayer {
             --light: #f8f9fa;
             --card-bg: #1a1a1a;
             --text-light: #e0e0e0;
+            --border: #333;
         }
 
         * {
@@ -245,7 +300,7 @@ class MoviePlayer {
             background: var(--card-bg);
             padding: 2rem;
             border-radius: 12px;
-            border: 1px solid #333;
+            border: 1px solid var(--border);
         }
 
         .details-card h2 {
@@ -328,7 +383,7 @@ class MoviePlayer {
             overflow: hidden;
             cursor: pointer;
             transition: all 0.3s ease;
-            border: 1px solid #333;
+            border: 1px solid var(--border);
             text-decoration: none;
             color: inherit;
             display: block;
@@ -370,6 +425,28 @@ class MoviePlayer {
             margin-top: 4rem;
             border-top: 3px solid var(--primary);
             text-align: center;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-light);
+        }
+
+        .spinner {
+            border: 4px solid #333;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Responsive Design */
@@ -415,28 +492,6 @@ class MoviePlayer {
                 grid-template-columns: 1fr;
             }
         }
-
-        /* Loading State */
-        .loading {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: var(--text-light);
-        }
-
-        .spinner {
-            border: 4px solid #333;
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
@@ -449,7 +504,7 @@ class MoviePlayer {
                 </a>
                 <nav class="nav" role="navigation" aria-label="Main navigation">
                     <a href="/" class="nav-link">Home</a>
-                    <a href="#" class="nav-link" id="categoryLink">Category</a>
+                    <a href="/?category=${this.movieData.category}" class="nav-link" id="categoryLink">${this.capitalizeFirst(this.movieData.category)}</a>
                 </nav>
             </div>
         </div>
@@ -457,214 +512,152 @@ class MoviePlayer {
 
     <!-- Main Content -->
     <main class="container" role="main">
-        <div class="loading">
-            <div class="spinner" aria-hidden="true"></div>
-            <p>Loading movie...</p>
-        </div>
+        <!-- Video Section -->
+        <section class="video-section" itemscope itemtype="https://schema.org/Movie">
+            <div class="video-wrapper">
+                <div class="video-container">
+                    <div class="video-thumbnail" id="videoThumbnail" 
+                         style="background-image: url('${this.movieData.posterUrl}')"
+                         itemprop="thumbnailUrl" content="${this.movieData.posterUrl}">
+                        <div class="play-button" id="playButton" aria-label="Play movie">
+                            ▶
+                        </div>
+                    </div>
+                    <iframe class="video-iframe ${this.movieData.videoUrl.includes('odysee.com') ? 'odysee' : ''}" 
+                            id="videoFrame" 
+                            style="display: none;"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                            allowfullscreen
+                            title="Watch ${this.escapeHTML(this.movieData.title)}"
+                            itemprop="embedUrl" content="${this.movieData.videoUrl}">
+                    </iframe>
+                </div>
+                
+                <!-- Video Info with H1 Title -->
+                <div class="video-info">
+                    <h1 class="video-title" itemprop="name">${this.escapeHTML(this.movieData.title)}</h1>
+                    
+                    <div class="video-stats">
+                        <span class="stat" itemprop="dateCreated">📅 ${this.movieData.releaseYear}</span>
+                        <span class="stat" itemprop="duration">⏱️ ${this.movieData.duration}</span>
+                        <span class="stat" itemprop="inLanguage">🗣️ ${this.movieData.language}</span>
+                        <span class="stat">🎬 ${this.movieData.quality}</span>
+                        <span class="stat" itemprop="contentRating">⭐ ${this.movieData.rating}</span>
+                    </div>
+                    
+                    <p class="video-description" itemprop="description">${this.escapeHTML(this.movieData.description)}</p>
+                </div>
+            </div>
+            
+            <!-- Movie Details with H2 Headings -->
+            <div class="movie-details">
+                <div class="details-card">
+                    <h2>Movie Information</h2>
+                    <div class="meta-grid">
+                        <div class="meta-item">
+                            <strong>Category</strong>
+                            <p itemprop="genre">${this.capitalizeFirst(this.movieData.category)}</p>
+                        </div>
+                        <div class="meta-item">
+                            <strong>Language</strong>
+                            <p itemprop="inLanguage">${this.movieData.language}</p>
+                        </div>
+                        <div class="meta-item">
+                            <strong>Quality</strong>
+                            <p>${this.movieData.quality}</p>
+                        </div>
+                        <div class="meta-item">
+                            <strong>Content Rating</strong>
+                            <p itemprop="contentRating">${this.movieData.rating}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="details-card">
+                    <h2>Cast & Crew</h2>
+                    <div class="cast-crew">
+                        ${this.movieData.director ? `
+                        <div class="cast-item" itemprop="director" itemscope itemtype="https://schema.org/Person">
+                            <strong>Director</strong>
+                            <p itemprop="name">${this.escapeHTML(this.movieData.director)}</p>
+                        </div>
+                        ` : ''}
+                        ${this.movieData.producer ? `
+                        <div class="cast-item" itemprop="producer" itemscope itemtype="https://schema.org/Person">
+                            <strong>Producer</strong>
+                            <p itemprop="name">${this.escapeHTML(this.movieData.producer)}</p>
+                        </div>
+                        ` : ''}
+                        ${this.movieData.mainCast ? `
+                        <div class="cast-item" style="grid-column: 1 / -1;">
+                            <strong>Main Cast</strong>
+                            <p itemprop="actor">${this.escapeHTML(this.movieData.mainCast)}</p>
+                        </div>
+                        ` : ''}
+                        ${this.movieData.supportingCast ? `
+                        <div class="cast-item" style="grid-column: 1 / -1;">
+                            <strong>Supporting Cast</strong>
+                            <p itemprop="actor">${this.escapeHTML(this.movieData.supportingCast)}</p>
+                        </div>
+                        ` : ''}
+                        ${!this.movieData.director && !this.movieData.producer && !this.movieData.mainCast && !this.movieData.supportingCast ? `
+                        <div class="cast-item" style="grid-column: 1 / -1;">
+                            <p>Cast information not available</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Related Movies with H2 Heading -->
+        <section class="related-section">
+            <h2 class="section-title">
+                More ${this.capitalizeFirst(this.movieData.category)} Movies
+            </h2>
+            <div id="related-movies" class="related-grid">
+                <div class="loading">
+                    <div class="spinner" aria-hidden="true"></div>
+                    <p>Loading related movies...</p>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- Footer -->
     <footer class="footer" role="contentinfo">
         <div class="container">
-            <p>&copy; 2024 Rwanda Cinema. All rights reserved.</p>
+            <p>&copy; ${new Date().getFullYear()} Rwanda Cinema. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Movie",
+        "name": "${this.escapeHTML(this.movieData.title)}",
+        "description": "${this.escapeHTML(this.movieData.description)}",
+        "image": "${this.movieData.posterUrl}",
+        "dateCreated": "${this.movieData.date}",
+        "duration": "${this.movieData.duration}",
+        "contentRating": "${this.movieData.rating}",
+        "inLanguage": "${this.movieData.language}",
+        "genre": "${this.movieData.category}",
+        "url": "${window.location.href}",
+        "actor": ${this.formatCast(this.movieData.mainCast)},
+        "director": ${this.movieData.director ? `{"@type": "Person", "name": "${this.escapeHTML(this.movieData.director)}"}` : '[]'},
+        "productionCompany": ${this.movieData.producer ? `{"@type": "Organization", "name": "${this.escapeHTML(this.movieData.producer)}"}` : '[]'},
+        "potentialAction": {
+            "@type": "WatchAction",
+            "target": "${this.movieData.videoUrl}"
+        }
+    }
+    </script>
 </body>
 </html>`;
-    }
 
-    async loadMovieFromURL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        this.currentCategory = urlParams.get('category');
-        this.currentSlug = urlParams.get('slug');
-
-        if (!this.currentCategory || !this.currentSlug) {
-            this.showError('Movie not found');
-            return;
-        }
-
-        try {
-            const response = await fetch(`/content/movies/${this.currentCategory}/${this.currentSlug}.md`);
-            
-            if (!response.ok) {
-                throw new Error('Movie not found');
-            }
-
-            const markdownContent = await response.text();
-            this.movieData = this.parseMovieData(markdownContent);
-            
-        } catch (error) {
-            console.error('Error loading movie:', error);
-            this.showError('Failed to load movie');
-        }
-    }
-
-    parseMovieData(markdownContent) {
-        const frontMatterMatch = markdownContent.match(/^---\n([\s\S]*?)\n---/);
-        if (!frontMatterMatch) {
-            throw new Error('Invalid movie format');
-        }
-
-        const frontMatter = frontMatterMatch[1];
-        const data = {};
-        
-        frontMatter.split('\n').forEach(line => {
-            const match = line.match(/(\w+):\s*(.*)/);
-            if (match) {
-                let [, key, value] = match;
-                value = value.replace(/^["'](.*)["']$/, '$1').trim();
-                
-                if (key === 'tags' && value.startsWith('[')) {
-                    try {
-                        value = JSON.parse(value);
-                    } catch (e) {
-                        value = [];
-                    }
-                }
-                
-                if (key === 'releaseYear') {
-                    value = parseInt(value);
-                }
-                
-                data[key] = value;
-            }
-        });
-
-        return data;
-    }
-
-    renderMoviePlayer() {
-        if (!this.movieData) {
-            this.showError('Movie data not available');
-            return;
-        }
-
-        // Update category link
-        const categoryLink = document.getElementById('categoryLink');
-        if (categoryLink) {
-            categoryLink.href = `/?category=${this.movieData.category}`;
-            categoryLink.textContent = this.movieData.category.charAt(0).toUpperCase() + this.movieData.category.slice(1);
-        }
-
-        const main = document.querySelector('main');
-        main.innerHTML = `
-            <!-- Video Section -->
-            <section class="video-section" itemscope itemtype="https://schema.org/Movie">
-                <div class="video-wrapper">
-                    <div class="video-container">
-                        ${this.renderVideoPlayer()}
-                    </div>
-                    
-                    <!-- Video Info with H1 Title -->
-                    <div class="video-info">
-                        <h1 class="video-title" itemprop="name">${this.movieData.title}</h1>
-                        
-                        <div class="video-stats">
-                            <span class="stat" itemprop="dateCreated">📅 ${this.movieData.releaseYear}</span>
-                            <span class="stat" itemprop="duration">⏱️ ${this.movieData.duration}</span>
-                            <span class="stat" itemprop="inLanguage">🗣️ ${this.movieData.language}</span>
-                            <span class="stat">🎬 ${this.movieData.quality}</span>
-                            <span class="stat" itemprop="contentRating">⭐ ${this.movieData.rating}</span>
-                        </div>
-                        
-                        <p class="video-description" itemprop="description">${this.movieData.description}</p>
-                    </div>
-                </div>
-                
-                <!-- Movie Details with H2 Headings -->
-                <div class="movie-details">
-                    <div class="details-card">
-                        <h2>Movie Information</h2>
-                        <div class="meta-grid">
-                            <div class="meta-item">
-                                <strong>Category</strong>
-                                <p itemprop="genre">${this.movieData.category.charAt(0).toUpperCase() + this.movieData.category.slice(1)}</p>
-                            </div>
-                            <div class="meta-item">
-                                <strong>Language</strong>
-                                <p itemprop="inLanguage">${this.movieData.language}</p>
-                            </div>
-                            <div class="meta-item">
-                                <strong>Quality</strong>
-                                <p>${this.movieData.quality}</p>
-                            </div>
-                            <div class="meta-item">
-                                <strong>Content Rating</strong>
-                                <p itemprop="contentRating">${this.movieData.rating}</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="details-card">
-                        <h2>Cast & Crew</h2>
-                        <div class="cast-crew">
-                            ${this.movieData.director ? `
-                            <div class="cast-item" itemprop="director" itemscope itemtype="https://schema.org/Person">
-                                <strong>Director</strong>
-                                <p itemprop="name">${this.movieData.director}</p>
-                            </div>
-                            ` : ''}
-                            ${this.movieData.producer ? `
-                            <div class="cast-item" itemprop="producer" itemscope itemtype="https://schema.org/Person">
-                                <strong>Producer</strong>
-                                <p itemprop="name">${this.movieData.producer}</p>
-                            </div>
-                            ` : ''}
-                            ${this.movieData.mainCast ? `
-                            <div class="cast-item" style="grid-column: 1 / -1;">
-                                <strong>Main Cast</strong>
-                                <p itemprop="actor">${this.movieData.mainCast}</p>
-                            </div>
-                            ` : ''}
-                            ${!this.movieData.director && !this.movieData.producer && !this.movieData.mainCast ? `
-                            <div class="cast-item" style="grid-column: 1 / -1;">
-                                <p>Cast information not available</p>
-                            </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Related Movies with H2 Heading -->
-            <section class="related-section">
-                <h2 class="section-title">
-                    More ${this.movieData.category.charAt(0).toUpperCase() + this.movieData.category.slice(1)} Movies
-                </h2>
-                <div id="related-movies" class="related-grid">
-                    <div class="loading">
-                        <div class="spinner" aria-hidden="true"></div>
-                        <p>Loading related movies...</p>
-                    </div>
-                </div>
-            </section>
-        `;
-
-        // Setup video play functionality
-        this.setupVideoPlayer();
-    }
-
-    renderVideoPlayer() {
-        const videoUrl = this.movieData.videoUrl;
-        const isOdysee = videoUrl.includes('odysee.com');
-        
-        return `
-            <div class="video-thumbnail" id="videoThumbnail" 
-                 style="background-image: url('${this.movieData.posterUrl}')"
-                 itemprop="thumbnailUrl" content="${this.movieData.posterUrl}">
-                <div class="play-button" id="playButton" aria-label="Play movie">
-                    ▶
-                </div>
-            </div>
-            <iframe class="video-iframe ${isOdysee ? 'odysee' : ''}" 
-                    id="videoFrame" 
-                    style="display: none;"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                    allowfullscreen
-                    title="Watch ${this.movieData.title}"
-                    itemprop="embedUrl" content="${videoUrl}">
-            </iframe>
-        `;
+        this.addStructuredData();
     }
 
     setupVideoPlayer() {
@@ -688,7 +681,6 @@ class MoviePlayer {
             videoFrame.src = embedUrl;
             videoFrame.style.display = 'block';
             thumbnail.classList.add('hidden');
-            this.videoPlaying = true;
         };
 
         thumbnail.addEventListener('click', startVideo);
@@ -706,21 +698,26 @@ class MoviePlayer {
 
     async loadRelatedMovies() {
         try {
+            // Try to load from movies.json first
             const response = await fetch('/content/movies/movies.json');
             const allMovies = await response.json();
             
+            // Filter to same category and exclude current movie
             const sameCategoryMovies = allMovies.filter(movie => 
                 movie.category === this.movieData.category && 
                 movie.slug !== this.movieData.slug
             );
 
+            // Sort by date (newest first)
             sameCategoryMovies.sort((a, b) => new Date(b.date) - new Date(a.date));
             
+            // Get latest 2 uploads
+            const latestMovies = sameCategoryMovies.slice(0, 2);
+            
+            // Get current movie position and 2 movies before it
             const currentMovieIndex = sameCategoryMovies.findIndex(movie => 
                 movie.slug === this.movieData.slug
             );
-
-            const latestMovies = sameCategoryMovies.slice(0, 2);
             
             let previousMovies = [];
             if (currentMovieIndex > 0) {
@@ -730,6 +727,7 @@ class MoviePlayer {
                 );
             }
 
+            // Combine and remove duplicates
             this.relatedMovies = [...latestMovies, ...previousMovies]
                 .filter((movie, index, self) => 
                     index === self.findIndex(m => m.slug === movie.slug)
@@ -761,96 +759,89 @@ class MoviePlayer {
 
         container.innerHTML = this.relatedMovies.map(movie => `
             <a href="/movie?category=${movie.category}&slug=${movie.slug}" class="related-card" itemprop="relatedLink">
-                <img src="${movie.posterUrl}" alt="${movie.title}" 
+                <img src="${movie.posterUrl}" alt="${this.escapeHTML(movie.title)}" 
                      onerror="this.src='https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=400&h=300&fit=crop'"
                      itemprop="image">
                 <div class="related-card-content">
-                    <h3 itemprop="name">${movie.title}</h3>
+                    <h3 itemprop="name">${this.escapeHTML(movie.title)}</h3>
                     <p>${movie.releaseYear} • ${movie.duration}</p>
                 </div>
             </a>
         `).join('');
     }
 
-    setupSEO() {
-        if (!this.movieData) return;
-
-        // Update document title and meta description
-        document.title = `${this.movieData.title} - Rwanda Cinema | Rwandan ${this.movieData.category} Movie`;
-        
-        let metaDesc = document.querySelector('meta[name="description"]');
-        if (metaDesc) {
-            metaDesc.content = this.movieData.metaDescription || this.movieData.description;
-        }
-
-        // Update OpenGraph tags
-        const ogTags = {
-            'og:title': this.movieData.title,
-            'og:description': this.movieData.metaDescription || this.movieData.description,
-            'og:image': this.movieData.posterUrl,
-            'og:url': window.location.href,
-            'og:type': 'video.movie',
-            'og:video': this.movieData.videoUrl,
-            'og:video:duration': this.extractMinutes(this.movieData.duration)
-        };
-
-        Object.entries(ogTags).forEach(([property, content]) => {
-            let meta = document.querySelector(`meta[property="${property}"]`);
-            if (!meta) {
-                meta = document.createElement('meta');
-                meta.setAttribute('property', property);
-                document.head.appendChild(meta);
-            }
-            meta.setAttribute('content', content);
-        });
-
-        // Add JSON-LD structured data
-        const structuredData = {
-            "@context": "https://schema.org",
-            "@type": "Movie",
-            "name": this.movieData.title,
-            "description": this.movieData.description,
-            "image": this.movieData.posterUrl,
-            "dateCreated": this.movieData.date,
-            "duration": this.movieData.duration,
-            "contentRating": this.movieData.rating,
-            "inLanguage": this.movieData.language,
-            "genre": this.movieData.category,
-            "url": window.location.href,
-            "potentialAction": {
-                "@type": "WatchAction",
-                "target": this.movieData.videoUrl
-            }
-        };
-
-        const script = document.createElement('script');
-        script.type = 'application/ld+json';
-        script.text = JSON.stringify(structuredData);
-        document.head.appendChild(script);
-
-        // Update canonical URL
-        const canonical = document.querySelector('link[rel="canonical"]');
-        if (canonical) {
-            canonical.href = window.location.href;
-        }
+    // Utility functions
+    escapeHTML(str) {
+        if (!str) return '';
+        return str.replace(/[&<>"']/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;', 
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[tag]));
     }
 
-    extractMinutes(duration) {
+    capitalizeFirst(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    generateKeywords() {
+        const baseKeywords = [
+            'Rwandan movies',
+            'Rwanda cinema',
+            'Kinyarwanda films',
+            'African movies',
+            'streaming Rwanda',
+            this.movieData.category,
+            this.movieData.language
+        ];
+        
+        if (this.movieData.tags && this.movieData.tags.length > 0) {
+            baseKeywords.push(...this.movieData.tags);
+        }
+        
+        return baseKeywords.join(', ');
+    }
+
+    extractSeconds(duration) {
         const match = duration.match(/(\d+)\s*min/);
         return match ? parseInt(match[1]) * 60 : 1800;
     }
 
+    formatCast(castString) {
+        if (!castString) return '[]';
+        const castArray = castString.split(',').map(actor => 
+            `{"@type": "Person", "name": "${this.escapeHTML(actor.trim())}"}`
+        );
+        return `[${castArray.join(', ')}]`;
+    }
+
+    addStructuredData() {
+        // Structured data is already included in the HTML
+        // This function is kept for compatibility
+    }
+
     showError(message) {
-        const main = document.querySelector('main');
-        main.innerHTML = `
-            <div style="text-align:center; padding:4rem 2rem;">
-                <h1 style="color:var(--secondary); margin-bottom:1rem;">Movie Not Found</h1>
-                <p style="color:var(--text-light); margin-bottom:2rem;">${message}</p>
-                <a href="/" style="background: var(--primary); color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; display: inline-block;">
-                    Back to Home
-                </a>
-            </div>
-        `;
+        document.documentElement.innerHTML = `<!DOCTYPE html>
+<html lang="rw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Not Found - Rwanda Cinema</title>
+    <style>
+        body { background: #0a0a0a; color: white; font-family: system-ui, sans-serif; text-align: center; padding: 4rem 1rem; }
+        h1 { color: #FAD201; margin-bottom: 1rem; }
+        a { background: #008753; color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; display: inline-block; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <h1>Movie Not Found</h1>
+    <p>${this.escapeHTML(message)}</p>
+    <a href="/">Back to Home</a>
+</body>
+</html>`;
     }
 }
 
@@ -861,4 +852,4 @@ if (document.readyState === 'loading') {
     });
 } else {
     new MoviePlayer();
-    }
+                        }
