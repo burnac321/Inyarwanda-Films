@@ -1,10 +1,11 @@
-// movie-player.js - Improved version with better layout and video player
+// movie-player.js - YouTube-style thumbnail with play button
 class MoviePlayer {
     constructor() {
         this.movieData = null;
         this.relatedMovies = [];
         this.currentCategory = '';
         this.currentSlug = '';
+        this.videoPlaying = false;
         this.init();
     }
 
@@ -26,7 +27,6 @@ class MoviePlayer {
         }
 
         try {
-            // Load movie markdown file
             const response = await fetch(`/content/movies/${this.currentCategory}/${this.currentSlug}.md`);
             
             if (!response.ok) {
@@ -86,7 +86,6 @@ class MoviePlayer {
 
         document.body.innerHTML = `
             <style>
-                /* Improved responsive styles */
                 .container {
                     max-width: 1200px;
                     margin: 0 auto;
@@ -103,14 +102,70 @@ class MoviePlayer {
                     margin-bottom: 2rem;
                 }
                 
-                .video-wrapper iframe,
-                .video-wrapper video {
+                /* 1280x720 Aspect Ratio */
+                .video-container {
+                    position: relative;
                     width: 100%;
-                    height: 67.5vh; /* 16:9 aspect ratio */
-                    min-height: 400px;
-                    max-height: 720px;
-                    display: block;
+                    height: 0;
+                    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+                    background: #000;
+                }
+                
+                .video-thumbnail {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-size: cover;
+                    background-position: center;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: opacity 0.3s ease;
+                }
+                
+                .video-thumbnail.hidden {
+                    opacity: 0;
+                    pointer-events: none;
+                }
+                
+                .play-button {
+                    width: 80px;
+                    height: 80px;
+                    background: rgba(0, 135, 83, 0.9);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 2rem;
+                    border: 4px solid white;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                }
+                
+                .play-button:hover {
+                    background: #006641;
+                    transform: scale(1.1);
+                }
+                
+                .video-iframe {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
                     border: none;
+                }
+                
+                /* Hide Odysee logo and controls */
+                .video-iframe.odysee {
+                    position: absolute !important;
+                    top: -60px !important; /* Hide Odysee header */
+                    height: calc(100% + 120px) !important;
                 }
                 
                 .movie-layout {
@@ -242,35 +297,6 @@ class MoviePlayer {
                     font-size: 0.9rem;
                     margin: 0;
                 }
-                
-                .fallback-player {
-                    padding: 3rem 2rem;
-                    text-align: center;
-                    background: #1a1a1a;
-                    border-radius: 12px;
-                    border: 2px dashed #333;
-                }
-                
-                .watch-button {
-                    background: #008753;
-                    color: white;
-                    padding: 1rem 2rem;
-                    text-decoration: none;
-                    border-radius: 8px;
-                    font-size: 1.1rem;
-                    font-weight: 600;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                    transition: all 0.3s ease;
-                    border: none;
-                    cursor: pointer;
-                }
-                
-                .watch-button:hover {
-                    background: #006641;
-                    transform: translateY(-2px);
-                }
             </style>
 
             <header style="background:#008753; padding:1rem; position:sticky; top:0; z-index:1000; border-bottom: 3px solid #FAD201;">
@@ -289,7 +315,9 @@ class MoviePlayer {
                 <!-- Video Player Section -->
                 <section style="margin-bottom:3rem;">
                     <div class="video-wrapper">
-                        ${this.renderVideoPlayer()}
+                        <div class="video-container">
+                            ${this.renderVideoPlayer()}
+                        </div>
                     </div>
                     
                     <div class="movie-layout">
@@ -366,52 +394,62 @@ class MoviePlayer {
                 </div>
             </footer>
         `;
+
+        // Setup video play functionality
+        this.setupVideoPlayer();
     }
 
     renderVideoPlayer() {
         const videoUrl = this.movieData.videoUrl;
+        const isOdysee = videoUrl.includes('odysee.com');
         
-        // Check if it's YouTube
-        if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
-            const videoId = this.extractYouTubeId(videoUrl);
-            if (videoId) {
-                return `
-                    <iframe 
-                        src="https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1"
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen
-                        title="Watch ${this.movieData.title}">
-                    </iframe>
-                `;
-            }
-        }
-        
-        // Check if it's Odysee
-        if (videoUrl.includes('odysee.com')) {
-            const embedUrl = videoUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/');
-            return `
-                <iframe 
-                    src="${embedUrl}"
-                    frameborder="0" 
-                    allowfullscreen
-                    title="Watch ${this.movieData.title}">
-                </iframe>
-            `;
-        }
-        
-        // Fallback to HTML5 video player with controls
+        // Create thumbnail with play button
         return `
-            <video controls poster="${this.movieData.posterUrl}">
-                <source src="${videoUrl}" type="video/mp4">
-                <source src="${videoUrl}" type="video/webm">
-                <source src="${videoUrl}" type="video/ogg">
-                Your browser does not support the video tag.
-                <a href="${videoUrl}" class="watch-button" style="margin-top:1rem;">
-                    <i class="fas fa-play"></i> Watch Movie
-                </a>
-            </video>
+            <div class="video-thumbnail" id="videoThumbnail" 
+                 style="background-image: url('${this.movieData.posterUrl}')">
+                <div class="play-button" id="playButton">
+                    ▶
+                </div>
+            </div>
+            <iframe class="video-iframe ${isOdysee ? 'odysee' : ''}" 
+                    id="videoFrame" 
+                    style="display: none;"
+                    allowfullscreen>
+            </iframe>
         `;
+    }
+
+    setupVideoPlayer() {
+        const thumbnail = document.getElementById('videoThumbnail');
+        const playButton = document.getElementById('playButton');
+        const videoFrame = document.getElementById('videoFrame');
+        const videoUrl = this.movieData.videoUrl;
+
+        const startVideo = () => {
+            let embedUrl = videoUrl;
+            
+            // Convert to embed URL if needed
+            if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+                const videoId = this.extractYouTubeId(videoUrl);
+                if (videoId) {
+                    embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+                }
+            } else if (videoUrl.includes('odysee.com')) {
+                embedUrl = videoUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/') + '?autoplay=1';
+            }
+            
+            videoFrame.src = embedUrl;
+            videoFrame.style.display = 'block';
+            thumbnail.classList.add('hidden');
+            this.videoPlaying = true;
+        };
+
+        // Click on thumbnail or play button starts video
+        thumbnail.addEventListener('click', startVideo);
+        playButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startVideo();
+        });
     }
 
     extractYouTubeId(url) {
@@ -422,43 +460,49 @@ class MoviePlayer {
 
     async loadRelatedMovies() {
         try {
-            // Try to load movies.json first
+            // Load all movies
             const response = await fetch('/content/movies/movies.json');
             const allMovies = await response.json();
             
-            this.relatedMovies = allMovies.filter(movie => 
+            // Filter movies from same category, excluding current movie
+            const sameCategoryMovies = allMovies.filter(movie => 
                 movie.category === this.movieData.category && 
                 movie.slug !== this.movieData.slug
-            ).slice(0, 6);
+            );
+
+            // Sort by date (newest first)
+            sameCategoryMovies.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Find current movie index
+            const currentMovieIndex = sameCategoryMovies.findIndex(movie => 
+                movie.slug === this.movieData.slug
+            );
+
+            // Get latest 2 uploads
+            const latestMovies = sameCategoryMovies.slice(0, 2);
+            
+            // Get 2 movies uploaded before current one
+            let previousMovies = [];
+            if (currentMovieIndex > 0) {
+                previousMovies = sameCategoryMovies.slice(
+                    Math.max(0, currentMovieIndex - 2), 
+                    currentMovieIndex
+                );
+            }
+
+            // Combine both (remove duplicates)
+            this.relatedMovies = [...latestMovies, ...previousMovies]
+                .filter((movie, index, self) => 
+                    index === self.findIndex(m => m.slug === movie.slug)
+                )
+                .slice(0, 4); // Show max 4 related movies
             
         } catch (error) {
-            console.log('Using fallback for related movies');
-            // Fallback: Create some dummy related movies based on current movie
-            this.relatedMovies = this.createFallbackRelatedMovies();
+            console.error('Error loading related movies:', error);
+            this.relatedMovies = [];
         }
         
         this.renderRelatedMovies();
-    }
-
-    createFallbackRelatedMovies() {
-        // Create some related movie suggestions based on current movie
-        const relatedTitles = [
-            "Another Great Rwandan Comedy",
-            "Popular Kinyarwanda Film",
-            "Rwandan Movie Collection",
-            "Best of Rwandan Cinema",
-            "African Comedy Special",
-            "Kinyarwanda Drama Series"
-        ];
-
-        return relatedTitles.map((title, index) => ({
-            title: title,
-            category: this.movieData.category,
-            slug: `related-movie-${index}`,
-            posterUrl: this.movieData.posterUrl,
-            releaseYear: this.movieData.releaseYear,
-            duration: this.movieData.duration
-        }));
     }
 
     renderRelatedMovies() {
@@ -468,7 +512,7 @@ class MoviePlayer {
             container.innerHTML = `
                 <div style="grid-column:1/-1; text-align:center; color:#ccc; padding:2rem;">
                     <p>No other movies found in this category yet.</p>
-                    <a href="/" class="watch-button" style="margin-top:1rem;">
+                    <a href="/" style="background: #008753; color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; display: inline-block; margin-top: 1rem;">
                         Browse All Movies
                     </a>
                 </div>
@@ -492,7 +536,7 @@ class MoviePlayer {
     setupSEO() {
         if (!this.movieData) return;
 
-        // Update meta tags dynamically
+        // Update meta tags
         let metaDesc = document.querySelector('meta[name="description"]');
         if (!metaDesc) {
             metaDesc = document.createElement('meta');
@@ -501,14 +545,13 @@ class MoviePlayer {
         }
         metaDesc.content = this.movieData.metaDescription || this.movieData.description;
 
-        // Create/update Open Graph tags
+        // Open Graph tags
         const ogTags = [
             { property: 'og:title', content: this.movieData.title },
             { property: 'og:description', content: this.movieData.metaDescription || this.movieData.description },
             { property: 'og:image', content: this.movieData.posterUrl },
             { property: 'og:url', content: window.location.href },
-            { property: 'og:type', content: 'video.movie' },
-            { property: 'og:video', content: this.movieData.videoUrl }
+            { property: 'og:type', content: 'video.movie' }
         ];
 
         ogTags.forEach(tag => {
@@ -521,7 +564,7 @@ class MoviePlayer {
             meta.setAttribute('content', tag.content);
         });
 
-        // Add structured data
+        // Structured data
         const structuredData = {
             "@context": "https://schema.org",
             "@type": "Movie",
@@ -535,7 +578,6 @@ class MoviePlayer {
             "url": window.location.href
         };
 
-        // Remove existing structured data
         const existingScript = document.querySelector('script[type="application/ld+json"]');
         if (existingScript) existingScript.remove();
 
@@ -555,8 +597,8 @@ class MoviePlayer {
             <main class="container" style="text-align:center; padding:4rem 1rem;">
                 <h1 style="color:#FAD201; margin-bottom:1rem; font-size:2rem;">Movie Not Found</h1>
                 <p style="color:#ccc; margin-bottom:2rem; font-size:1.1rem;">${message}</p>
-                <a href="/" class="watch-button">
-                    <i class="fas fa-home"></i> Back to Home
+                <a href="/" style="background: #008753; color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; display: inline-block;">
+                    Back to Home
                 </a>
             </main>
         `;
