@@ -464,392 +464,395 @@
             </div>
         </form>
     </div>
+        <script>
+    // Global variables
+    let selectedTags = [];
+    let categories = [];
 
-    <script>
-        // Global variables
-        let selectedTags = [];
-        let categories = [];
+    // DOM Elements
+    const form = document.getElementById('movieUploadForm');
+    const alertMessage = document.getElementById('alertMessage');
+    const categorySelector = document.getElementById('categorySelector');
+    const newCategoryInput = document.getElementById('newCategoryInput');
+    const addNewCategoryBtn = document.getElementById('addNewCategory');
+    const saveNewCategoryBtn = document.getElementById('saveNewCategory');
+    const cancelNewCategoryBtn = document.getElementById('cancelNewCategory');
+    const refreshCategoriesBtn = document.getElementById('refreshCategories');
+    const selectedCategoryInput = document.getElementById('selectedCategory');
+    const tagsInput = document.getElementById('tagsInput');
+    const tagsContainer = document.getElementById('tagsContainer');
+    const movieTitleInput = document.getElementById('movieTitle');
+    const slugInput = document.getElementById('slug');
 
-        // DOM Elements
-        const form = document.getElementById('movieUploadForm');
-        const alertMessage = document.getElementById('alertMessage');
-        const categorySelector = document.getElementById('categorySelector');
-        const newCategoryInput = document.getElementById('newCategoryInput');
-        const addNewCategoryBtn = document.getElementById('addNewCategory');
-        const saveNewCategoryBtn = document.getElementById('saveNewCategory');
-        const cancelNewCategoryBtn = document.getElementById('cancelNewCategory');
-        const refreshCategoriesBtn = document.getElementById('refreshCategories');
-        const selectedCategoryInput = document.getElementById('selectedCategory');
-        const tagsInput = document.getElementById('tagsInput');
-        const tagsContainer = document.getElementById('tagsContainer');
-        const movieTitleInput = document.getElementById('movieTitle');
-        const slugInput = document.getElementById('slug');
-
-        // Load categories from GitHub
-        async function loadCategories() {
-            try {
-                showCategoryLoading(true);
-                
-                // This would call your API endpoint to fetch categories
-                const response = await fetch('/api/get-categories');
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to load categories: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                categories = data.categories || [];
-                
-                if (categories.length === 0) {
-                    // If no categories exist, initialize with defaults
-                    categories = ['drama', 'comedy', 'documentary', 'historical'];
-                    // Save default categories to GitHub
-                    await saveCategoriesToGitHub();
-                }
-                
-                initializeCategories();
-                if (categories.length > 0) {
-                    selectCategory(categories[0]);
-                }
-                
-            } catch (error) {
-                console.error('Error loading categories:', error);
-                showAlert('Failed to load categories. Using default categories.', 'error');
-                
-                // Fallback to default categories
-                categories = ['drama', 'comedy', 'documentary', 'historical'];
-                initializeCategories();
-                if (categories.length > 0) {
-                    selectCategory(categories[0]);
-                }
-            } finally {
-                showCategoryLoading(false);
-            }
-        }
-
-        // Save categories to GitHub
-        async function saveCategoriesToGitHub() {
-            try {
-                const response = await fetch('/api/save-categories', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ categories })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Failed to save categories: ${response.status}`);
-                }
-                
-                return await response.json();
-            } catch (error) {
-                console.error('Error saving categories:', error);
-                throw error;
-            }
-        }
-
-        // Show/hide category loading state
-        function showCategoryLoading(show) {
-            if (show) {
-                categorySelector.innerHTML = '<div class="loading" style="display: inline-block;"></div> Loading categories...';
-            }
-        }
-
-        // Initialize categories display
-        function initializeCategories() {
-            categorySelector.innerHTML = '';
+    // Load categories from GitHub
+    async function loadCategories() {
+        try {
+            showCategoryLoading(true);
             
-            // Add categories
-            categories.forEach(category => {
-                const pill = document.createElement('div');
-                pill.className = 'category-pill manageable';
-                pill.innerHTML = `
-                    ${category.charAt(0).toUpperCase() + category.slice(1)}
-                    <span class="category-remove" data-category="${category}">&times;</span>
-                `;
-                pill.setAttribute('data-category', category);
-                pill.addEventListener('click', (e) => {
-                    if (!e.target.classList.contains('category-remove')) {
-                        selectCategory(category);
-                    }
-                });
-                
-                // Add remove functionality
-                const removeBtn = pill.querySelector('.category-remove');
-                removeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    removeCategory(category);
-                });
-                
-                categorySelector.appendChild(pill);
+            const response = await fetch('/api/get-categories');
+            
+            if (!response.ok) {
+                throw new Error(`Failed to load categories: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            categories = data.categories || [];
+            
+            // If no categories exist, start with empty array
+            // User can add their first category
+            if (categories.length === 0) {
+                showAlert('No categories found. Please add your first category.', 'error');
+            }
+            
+            initializeCategories();
+            if (categories.length > 0) {
+                selectCategory(categories[0]);
+            }
+            
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            showAlert('Failed to load categories. Please refresh the page.', 'error');
+            categories = [];
+            initializeCategories();
+        } finally {
+            showCategoryLoading(false);
+        }
+    }
+
+    // Save categories to GitHub
+    async function saveCategoriesToGitHub(categories) {
+        try {
+            const response = await fetch('/api/save-categories', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ categories })
             });
-        }
 
-        // Remove a category
-        async function removeCategory(category) {
-            if (categories.length <= 1) {
-                showAlert('Cannot remove the last category', 'error');
-                return;
+            if (!response.ok) {
+                throw new Error(`Failed to save categories: ${response.status}`);
             }
             
-            if (!confirm(`Are you sure you want to remove the "${category}" category?`)) {
-                return;
-            }
+            return await response.json();
+        } catch (error) {
+            throw new Error('Failed to save categories: ' + error.message);
+        }
+    }
+
+    // Show/hide category loading state
+    function showCategoryLoading(show) {
+        if (show) {
+            categorySelector.innerHTML = '<div class="loading" style="display: inline-block;"></div> Loading categories...';
+        }
+    }
+
+    // Initialize categories display
+    function initializeCategories() {
+        categorySelector.innerHTML = '';
+        
+        if (categories.length === 0) {
+            categorySelector.innerHTML = '<div style="color: var(--gray); font-style: italic;">No categories yet. Add your first category below.</div>';
+            return;
+        }
+        
+        // Add categories
+        categories.forEach(category => {
+            const pill = document.createElement('div');
+            pill.className = 'category-pill manageable';
+            pill.innerHTML = `
+                ${category.charAt(0).toUpperCase() + category.slice(1)}
+                <span class="category-remove" data-category="${category}">&times;</span>
+            `;
+            pill.setAttribute('data-category', category);
             
-            try {
-                // Remove from local array
-                categories = categories.filter(cat => cat !== category);
-                
-                // Save to GitHub
-                await saveCategoriesToGitHub();
-                
-                // Update UI
-                initializeCategories();
-                
-                // Reselect a category if the currently selected one was removed
-                if (selectedCategoryInput.value === category) {
-                    selectCategory(categories[0]);
+            pill.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('category-remove')) {
+                    selectCategory(category);
                 }
-                
-                showAlert(`Category "${category}" removed successfully`, 'success');
-            } catch (error) {
-                console.error('Error removing category:', error);
-                showAlert('Failed to remove category', 'error');
-            }
-        }
+            });
+            
+            // Add remove functionality
+            const removeBtn = pill.querySelector('.category-remove');
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeCategory(category);
+            });
+            
+            categorySelector.appendChild(pill);
+        });
+    }
 
-        // Category selection
-        function selectCategory(category) {
+    // Remove a category
+    async function removeCategory(category) {
+        if (categories.length <= 1) {
+            showAlert('Cannot remove the last category. You must have at least one category.', 'error');
+            return;
+        }
+        
+        if (!confirm(`Are you sure you want to remove the "${category}" category?`)) {
+            return;
+        }
+        
+        try {
+            // Remove from local array
+            categories = categories.filter(cat => cat !== category);
+            
+            // Save to GitHub
+            await saveCategoriesToGitHub(categories);
+            
             // Update UI
-            categorySelector.querySelectorAll('.category-pill').forEach(pill => {
-                pill.classList.remove('active');
-            });
-            const selectedPill = categorySelector.querySelector(`[data-category="${category}"]`);
-            if (selectedPill) {
-                selectedPill.classList.add('active');
+            initializeCategories();
+            
+            // Reselect a category if the currently selected one was removed
+            if (selectedCategoryInput.value === category) {
+                selectCategory(categories[0]);
             }
             
-            // Update hidden input
-            selectedCategoryInput.value = category;
+            showAlert(`Category "${category}" removed successfully`, 'success');
+        } catch (error) {
+            console.error('Error removing category:', error);
+            showAlert('Failed to remove category', 'error');
         }
+    }
 
-        // Add new category
-        addNewCategoryBtn.addEventListener('click', () => {
-            newCategoryInput.style.display = 'flex';
-            addNewCategoryBtn.style.display = 'none';
+    // Category selection
+    function selectCategory(category) {
+        // Update UI
+        categorySelector.querySelectorAll('.category-pill').forEach(pill => {
+            pill.classList.remove('active');
         });
+        const selectedPill = categorySelector.querySelector(`[data-category="${category}"]`);
+        if (selectedPill) {
+            selectedPill.classList.add('active');
+        }
+        
+        // Update hidden input
+        selectedCategoryInput.value = category;
+    }
 
-        saveNewCategoryBtn.addEventListener('click', async () => {
-            const newCategory = document.getElementById('newCategoryName').value.trim().toLowerCase();
-            
-            if (!newCategory) {
-                showAlert('Please enter a category name', 'error');
-                return;
-            }
-            
-            if (categories.includes(newCategory)) {
-                showAlert('Category already exists', 'error');
-                return;
-            }
-            
-            try {
-                // Add to local array
-                categories.push(newCategory);
-                
-                // Save to GitHub
-                await saveCategoriesToGitHub();
-                
-                // Update UI
-                initializeCategories();
-                selectCategory(newCategory);
-                
-                newCategoryInput.style.display = 'none';
-                addNewCategoryBtn.style.display = 'block';
-                document.getElementById('newCategoryName').value = '';
-                
-                showAlert(`Category "${newCategory}" added successfully`, 'success');
-            } catch (error) {
-                console.error('Error adding category:', error);
-                showAlert('Failed to add category', 'error');
-            }
-        });
+    // Add new category
+    addNewCategoryBtn.addEventListener('click', () => {
+        newCategoryInput.style.display = 'flex';
+        addNewCategoryBtn.style.display = 'none';
+    });
 
-        cancelNewCategoryBtn.addEventListener('click', () => {
+    saveNewCategoryBtn.addEventListener('click', async () => {
+        const newCategory = document.getElementById('newCategoryName').value.trim().toLowerCase();
+        
+        if (!newCategory) {
+            showAlert('Please enter a category name', 'error');
+            return;
+        }
+        
+        if (categories.includes(newCategory)) {
+            showAlert('Category already exists', 'error');
+            return;
+        }
+        
+        try {
+            // Add to local array
+            categories.push(newCategory);
+            
+            // Save to GitHub
+            await saveCategoriesToGitHub(categories);
+            
+            // Update UI
+            initializeCategories();
+            selectCategory(newCategory);
+            
             newCategoryInput.style.display = 'none';
             addNewCategoryBtn.style.display = 'block';
             document.getElementById('newCategoryName').value = '';
-        });
-
-        // Refresh categories
-        refreshCategoriesBtn.addEventListener('click', () => {
-            loadCategories();
-        });
-
-        // Tags management
-        tagsInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ',') {
-                e.preventDefault();
-                const tag = tagsInput.value.trim().replace(',', '');
-                if (tag && !selectedTags.includes(tag)) {
-                    selectedTags.push(tag);
-                    updateTagsDisplay();
-                }
-                tagsInput.value = '';
-            }
-        });
-
-        function updateTagsDisplay() {
-            tagsContainer.innerHTML = '';
-            selectedTags.forEach(tag => {
-                const tagElement = document.createElement('div');
-                tagElement.className = 'tag';
-                tagElement.innerHTML = `
-                    ${tag}
-                    <span class="tag-remove" data-tag="${tag}">&times;</span>
-                `;
-                
-                // Add remove functionality
-                const removeBtn = tagElement.querySelector('.tag-remove');
-                removeBtn.addEventListener('click', () => removeTag(tag));
-                
-                tagsContainer.appendChild(tagElement);
-            });
-        }
-
-        function removeTag(tag) {
-            selectedTags = selectedTags.filter(t => t !== tag);
-            updateTagsDisplay();
-        }
-
-        // Auto-generate slug from title
-        movieTitleInput.addEventListener('blur', () => {
-            if (!slugInput.value) {
-                const slug = generateSlug(movieTitleInput.value);
-                slugInput.value = slug;
-            }
-        });
-
-        // Auto-generate meta description
-        document.getElementById('description').addEventListener('blur', function() {
-            const metaDesc = document.getElementById('metaDescription');
-            if (!metaDesc.value && this.value) {
-                // Create a shortened version for meta description
-                const shortDesc = this.value.length > 160 
-                    ? this.value.substring(0, 157) + '...' 
-                    : this.value;
-                metaDesc.value = shortDesc;
-            }
-        });
-
-        // Show alert message
-        function showAlert(message, type = 'success') {
-            alertMessage.textContent = message;
-            alertMessage.className = `alert alert-${type}`;
-            alertMessage.style.display = 'block';
             
-            setTimeout(() => {
-                alertMessage.style.display = 'none';
-            }, 5000);
+            showAlert(`Category "${newCategory}" added successfully`, 'success');
+        } catch (error) {
+            console.error('Error adding category:', error);
+            showAlert('Failed to add category', 'error');
         }
+    });
 
-        // Generate slug from title
-        function generateSlug(title) {
-            return title
-                .toLowerCase()
-                .trim()
-                .replace(/[^\w\s-]/g, '')
-                .replace(/[\s_-]+/g, '-')
-                .replace(/^-+|-+$/g, '');
-        }
+    cancelNewCategoryBtn.addEventListener('click', () => {
+        newCategoryInput.style.display = 'none';
+        addNewCategoryBtn.style.display = 'block';
+        document.getElementById('newCategoryName').value = '';
+    });
 
-        // Form submission
-        form.addEventListener('submit', async (e) => {
+    // Refresh categories
+    refreshCategoriesBtn.addEventListener('click', () => {
+        loadCategories();
+    });
+
+    // Tags management
+    tagsInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault();
-            
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-
-            try {
-                // Validate required fields
-                if (!selectedCategoryInput.value) {
-                    throw new Error('Please select a category');
-                }
-
-                // Collect form data
-                const movieData = {
-                    title: document.getElementById('movieTitle').value,
-                    releaseYear: parseInt(document.getElementById('releaseYear').value),
-                    duration: document.getElementById('duration').value,
-                    language: document.getElementById('language').value,
-                    category: selectedCategoryInput.value,
-                    rating: document.getElementById('rating').value,
-                    quality: document.getElementById('quality').value,
-                    description: document.getElementById('description').value,
-                    videoUrl: document.getElementById('videoUrl').value,
-                    posterUrl: document.getElementById('posterUrl').value,
-                    director: document.getElementById('director').value,
-                    producer: document.getElementById('producer').value,
-                    mainCast: document.getElementById('mainCast').value,
-                    supportingCast: document.getElementById('supportingCast').value,
-                    metaDescription: document.getElementById('metaDescription').value || 
-                                    document.getElementById('description').value.substring(0, 160),
-                    tags: selectedTags,
-                    slug: document.getElementById('slug').value || generateSlug(document.getElementById('movieTitle').value),
-                    createdAt: new Date().toISOString()
-                };
-
-                // Save to GitHub via API
-                const response = await saveMovieToGitHub(movieData);
-
-                if (response.success) {
-                    showAlert('Movie uploaded successfully! The page will be live in a few minutes.', 'success');
-                    form.reset();
-                    selectedTags = [];
-                    updateTagsDisplay();
-                    // Reselect the first category
-                    if (categories.length > 0) {
-                        selectCategory(categories[0]);
-                    }
-                } else {
-                    throw new Error(response.message || 'Upload failed');
-                }
-
-            } catch (error) {
-                console.error('Upload error:', error);
-                showAlert('Error uploading movie: ' + error.message, 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Movie';
+            const tag = tagsInput.value.trim().replace(',', '');
+            if (tag && !selectedTags.includes(tag)) {
+                selectedTags.push(tag);
+                updateTagsDisplay();
             }
-        });
-
-        // Save movie to GitHub
-        async function saveMovieToGitHub(movieData) {
-            try {
-                const response = await fetch('/api/upload-movie', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(movieData)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                return await response.json();
-            } catch (error) {
-                throw new Error('Failed to save movie data: ' + error.message);
-            }
+            tagsInput.value = '';
         }
+    });
 
-        // Initialize the form when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            loadCategories();
+    function updateTagsDisplay() {
+        tagsContainer.innerHTML = '';
+        selectedTags.forEach(tag => {
+            const tagElement = document.createElement('div');
+            tagElement.className = 'tag';
+            tagElement.innerHTML = `
+                ${tag}
+                <span class="tag-remove" data-tag="${tag}">&times;</span>
+            `;
+            
+            // Add remove functionality
+            const removeBtn = tagElement.querySelector('.tag-remove');
+            removeBtn.addEventListener('click', () => removeTag(tag));
+            
+            tagsContainer.appendChild(tagElement);
         });
-    </script>
+    }
+
+    function removeTag(tag) {
+        selectedTags = selectedTags.filter(t => t !== tag);
+        updateTagsDisplay();
+    }
+
+    // Auto-generate slug from title
+    movieTitleInput.addEventListener('blur', () => {
+        if (!slugInput.value) {
+            const slug = generateSlug(movieTitleInput.value);
+            slugInput.value = slug;
+        }
+    });
+
+    // Auto-generate meta description
+    document.getElementById('description').addEventListener('blur', function() {
+        const metaDesc = document.getElementById('metaDescription');
+        if (!metaDesc.value && this.value) {
+            // Create a shortened version for meta description
+            const shortDesc = this.value.length > 160 
+                ? this.value.substring(0, 157) + '...' 
+                : this.value;
+            metaDesc.value = shortDesc;
+        }
+    });
+
+    // Show alert message
+    function showAlert(message, type = 'success') {
+        alertMessage.textContent = message;
+        alertMessage.className = `alert alert-${type}`;
+        alertMessage.style.display = 'block';
+        
+        setTimeout(() => {
+            alertMessage.style.display = 'none';
+        }, 5000);
+    }
+
+    // Generate slug from title
+    function generateSlug(title) {
+        return title
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Validate that we have at least one category
+        if (categories.length === 0) {
+            showAlert('Please add at least one category before uploading a movie', 'error');
+            return;
+        }
+        
+        if (!selectedCategoryInput.value) {
+            showAlert('Please select a category', 'error');
+            return;
+        }
+        
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+        try {
+            // Collect form data
+            const movieData = {
+                title: document.getElementById('movieTitle').value,
+                releaseYear: parseInt(document.getElementById('releaseYear').value),
+                duration: document.getElementById('duration').value,
+                language: document.getElementById('language').value,
+                category: selectedCategoryInput.value,
+                rating: document.getElementById('rating').value,
+                quality: document.getElementById('quality').value,
+                description: document.getElementById('description').value,
+                videoUrl: document.getElementById('videoUrl').value,
+                posterUrl: document.getElementById('posterUrl').value,
+                director: document.getElementById('director').value,
+                producer: document.getElementById('producer').value,
+                mainCast: document.getElementById('mainCast').value,
+                supportingCast: document.getElementById('supportingCast').value,
+                metaDescription: document.getElementById('metaDescription').value || 
+                                document.getElementById('description').value.substring(0, 160),
+                tags: selectedTags,
+                slug: document.getElementById('slug').value || generateSlug(document.getElementById('movieTitle').value),
+                createdAt: new Date().toISOString()
+            };
+
+            // Save to GitHub via API
+            const response = await saveMovieToGitHub(movieData);
+
+            if (response.success) {
+                showAlert('Movie uploaded successfully! The page will be live in a few minutes.', 'success');
+                form.reset();
+                selectedTags = [];
+                updateTagsDisplay();
+                // Reselect the first category
+                if (categories.length > 0) {
+                    selectCategory(categories[0]);
+                }
+            } else {
+                throw new Error(response.message || 'Upload failed');
+            }
+
+        } catch (error) {
+            console.error('Upload error:', error);
+            showAlert('Error uploading movie: ' + error.message, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Movie';
+        }
+    });
+
+    // Save movie to GitHub
+    async function saveMovieToGitHub(movieData) {
+        try {
+            const response = await fetch('/api/upload-movie', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(movieData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            throw new Error('Failed to save movie data: ' + error.message);
+        }
+    }
+
+    // Initialize the form when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCategories();
+    });
+        </script>
 </body>
 </html>
