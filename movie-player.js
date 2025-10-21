@@ -1,4 +1,4 @@
-// movie-player.js - Dynamic SEO Movie Page Generator (No JSON Required)
+// movie-player.js - Ultimate SEO & Social Media Optimized
 class MoviePlayer {
     constructor() {
         this.movieData = null;
@@ -9,11 +9,14 @@ class MoviePlayer {
     }
 
     async init() {
+        // Load movie data FIRST for social media crawlers
         await this.loadMovieFromURL();
+        
         if (this.movieData) {
-            this.generateCompletePage();
+            this.generateSEOOptimizedPage();
             this.setupVideoPlayer();
             await this.loadRelatedMovies();
+            this.setupSocialSharing();
         }
     }
 
@@ -23,7 +26,7 @@ class MoviePlayer {
         this.currentSlug = urlParams.get('slug');
 
         if (!this.currentCategory || !this.currentSlug) {
-            this.showError('Movie parameters missing');
+            this.showError('Movie not found');
             return;
         }
 
@@ -64,40 +67,58 @@ class MoviePlayer {
         return data;
     }
 
-    generateCompletePage() {
+    generateSEOOptimizedPage() {
+        const pageUrl = window.location.href;
+        const shareTitle = encodeURIComponent(this.movieData.title);
+        const shareText = encodeURIComponent(this.movieData.description);
+        const shareUrl = encodeURIComponent(pageUrl);
+
         document.documentElement.innerHTML = `<!DOCTYPE html>
 <html lang="rw" itemscope itemtype="http://schema.org/WebPage">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${this.escapeHTML(this.movieData.title)} - Rwanda Cinema | Rwandan ${this.capitalizeFirst(this.movieData.category)} Movies</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>${this.escapeHTML(this.movieData.title)} - Rwanda Cinema | Watch Online</title>
+    <meta name="title" content="${this.escapeHTML(this.movieData.title)} - Rwanda Cinema">
     <meta name="description" content="${this.escapeHTML(this.movieData.metaDescription || this.movieData.description)}">
     <meta name="keywords" content="${this.generateKeywords()}">
-    <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="author" content="Rwanda Cinema">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     
-    <!-- OpenGraph Meta Tags -->
-    <meta property="og:title" content="${this.escapeHTML(this.movieData.title)}">
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="video.movie">
+    <meta property="og:url" content="${pageUrl}">
+    <meta property="og:title" content="${this.escapeHTML(this.movieData.title)} - Rwanda Cinema">
     <meta property="og:description" content="${this.escapeHTML(this.movieData.metaDescription || this.movieData.description)}">
     <meta property="og:image" content="${this.movieData.posterUrl}">
-    <meta property="og:url" content="${window.location.href}">
-    <meta property="og:type" content="video.movie">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="Rwanda Cinema">
     <meta property="og:locale" content="rw_RW">
     <meta property="og:video" content="${this.movieData.videoUrl}">
-    <meta property="og:video:duration" content="${this.extractSeconds(this.movieData.duration)}">
+    <meta property="og:video:type" content="text/html">
+    <meta property="og:video:width" content="1280">
+    <meta property="og:video:height" content="720">
     
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${this.escapeHTML(this.movieData.title)}">
-    <meta name="twitter:description" content="${this.escapeHTML(this.movieData.metaDescription || this.movieData.description)}">
-    <meta name="twitter:image" content="${this.movieData.posterUrl}">
-    <meta name="twitter:site" content="@RwandaCinema">
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="${pageUrl}">
+    <meta property="twitter:title" content="${this.escapeHTML(this.movieData.title)} - Rwanda Cinema">
+    <meta property="twitter:description" content="${this.escapeHTML(this.movieData.metaDescription || this.movieData.description)}">
+    <meta property="twitter:image" content="${this.movieData.posterUrl}">
+    <meta property="twitter:site" content="@RwandaCinema">
+    <meta property="twitter:creator" content="@RwandaCinema">
     
-    <!-- Canonical URL -->
-    <link rel="canonical" href="${window.location.href}">
+    <!-- Additional SEO Meta -->
+    <meta name="theme-color" content="#008753">
+    <meta name="msapplication-TileColor" content="#008753">
+    <link rel="canonical" href="${pageUrl}">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
-    <!-- Preload critical resources -->
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="${this.movieData.posterUrl}" as="image">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -107,7 +128,6 @@ class MoviePlayer {
             --secondary: #FAD201;
             --accent: #00A1DE;
             --dark: #0a0a0a;
-            --light: #f8f9fa;
             --card-bg: #1a1a1a;
             --text-light: #e0e0e0;
             --border: #333;
@@ -117,13 +137,14 @@ class MoviePlayer {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
         }
 
         body {
             background: var(--dark);
             color: white;
             line-height: 1.6;
+            min-height: 100vh;
         }
 
         .container {
@@ -146,6 +167,8 @@ class MoviePlayer {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .logo {
@@ -161,6 +184,8 @@ class MoviePlayer {
         .nav {
             display: flex;
             gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav-link {
@@ -169,10 +194,39 @@ class MoviePlayer {
             padding: 0.5rem 1rem;
             border-radius: 6px;
             transition: background 0.3s;
+            font-weight: 500;
         }
 
         .nav-link:hover {
             background: rgba(255,255,255,0.1);
+        }
+
+        /* Social Sharing */
+        .social-share {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: 1rem;
+        }
+
+        .share-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .share-btn:hover {
+            background: var(--secondary);
+            color: var(--dark);
+            transform: scale(1.1);
         }
 
         /* Video Player */
@@ -256,7 +310,6 @@ class MoviePlayer {
         .video-info {
             padding: 2rem;
             background: var(--card-bg);
-            border-radius: 0 0 12px 12px;
         }
 
         .video-title {
@@ -449,15 +502,38 @@ class MoviePlayer {
             100% { transform: rotate(360deg); }
         }
 
+        /* Breadcrumb */
+        .breadcrumb {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: var(--secondary);
+            text-decoration: none;
+        }
+
+        .breadcrumb span {
+            color: var(--text-light);
+            margin: 0 0.5rem;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
-                gap: 1rem;
+                text-align: center;
             }
 
             .nav {
-                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .social-share {
+                margin-left: 0;
                 justify-content: center;
             }
 
@@ -504,7 +580,18 @@ class MoviePlayer {
                 </a>
                 <nav class="nav" role="navigation" aria-label="Main navigation">
                     <a href="/" class="nav-link">Home</a>
-                    <a href="/?category=${this.movieData.category}" class="nav-link" id="categoryLink">${this.capitalizeFirst(this.movieData.category)}</a>
+                    <a href="/?category=${this.movieData.category}" class="nav-link">${this.capitalizeFirst(this.movieData.category)}</a>
+                    <div class="social-share">
+                        <button class="share-btn" onclick="shareOnFacebook()" aria-label="Share on Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </button>
+                        <button class="share-btn" onclick="shareOnTwitter()" aria-label="Share on Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </button>
+                        <button class="share-btn" onclick="shareOnWhatsApp()" aria-label="Share on WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
+                    </div>
                 </nav>
             </div>
         </div>
@@ -512,6 +599,15 @@ class MoviePlayer {
 
     <!-- Main Content -->
     <main class="container" role="main">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="/">Home</a>
+            <span>></span>
+            <a href="/?category=${this.movieData.category}">${this.capitalizeFirst(this.movieData.category)}</a>
+            <span>></span>
+            <span>${this.escapeHTML(this.movieData.title)}</span>
+        </nav>
+
         <!-- Video Section -->
         <section class="video-section" itemscope itemtype="https://schema.org/Movie">
             <div class="video-wrapper">
@@ -594,13 +690,7 @@ class MoviePlayer {
                             <p itemprop="actor">${this.escapeHTML(this.movieData.mainCast)}</p>
                         </div>
                         ` : ''}
-                        ${this.movieData.supportingCast ? `
-                        <div class="cast-item" style="grid-column: 1 / -1;">
-                            <strong>Supporting Cast</strong>
-                            <p itemprop="actor">${this.escapeHTML(this.movieData.supportingCast)}</p>
-                        </div>
-                        ` : ''}
-                        ${!this.movieData.director && !this.movieData.producer && !this.movieData.mainCast && !this.movieData.supportingCast ? `
+                        ${!this.movieData.director && !this.movieData.producer && !this.movieData.mainCast ? `
                         <div class="cast-item" style="grid-column: 1 / -1;">
                             <p>Cast information not available</p>
                         </div>
@@ -654,10 +744,27 @@ class MoviePlayer {
         }
     }
     </script>
+
+    <!-- Social Sharing Script -->
+    <script>
+        function shareOnFacebook() {
+            const url = encodeURIComponent(window.location.href);
+            window.open('https://www.facebook.com/sharer/sharer.php?u=' + url, '_blank');
+        }
+
+        function shareOnTwitter() {
+            const text = encodeURIComponent('${this.escapeHTML(this.movieData.title)} - Watch on Rwanda Cinema');
+            const url = encodeURIComponent(window.location.href);
+            window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank');
+        }
+
+        function shareOnWhatsApp() {
+            const text = encodeURIComponent('Check out this movie: ${this.escapeHTML(this.movieData.title)} - ' + window.location.href);
+            window.open('https://wa.me/?text=' + text, '_blank');
+        }
+    </script>
 </body>
 </html>`;
-
-        this.addStructuredData();
     }
 
     setupVideoPlayer() {
@@ -698,8 +805,8 @@ class MoviePlayer {
 
     async loadRelatedMovies() {
         try {
-            // Scan the current category directory for other movies
-            this.relatedMovies = await this.scanCategoryForMovies();
+            // Try to find related movies dynamically
+            this.relatedMovies = await this.findRelatedMovies();
         } catch (error) {
             console.error('Error loading related movies:', error);
             this.relatedMovies = [];
@@ -707,86 +814,10 @@ class MoviePlayer {
         this.renderRelatedMovies();
     }
 
-    async scanCategoryForMovies() {
-        try {
-            // Get directory listing of the current category
-            const response = await fetch(`/content/movies/${this.currentCategory}/`);
-            const html = await response.text();
-            
-            // Extract all .md files from the directory
-            const movieFiles = this.extractMovieFiles(html);
-            
-            const movies = [];
-            
-            // Load basic info from each movie file (limit to 6 for performance)
-            for (const file of movieFiles.slice(0, 6)) {
-                const fileSlug = file.replace('.md', '');
-                // Skip the current movie
-                if (fileSlug !== this.currentSlug) {
-                    const movieData = await this.loadBasicMovieData(file);
-                    if (movieData) movies.push(movieData);
-                }
-            }
-            
-            // Return random 4 movies (or all if less than 4)
-            return this.shuffleArray(movies).slice(0, 4);
-            
-        } catch (error) {
-            console.log('Cannot scan directory, showing empty state');
-            return [];
-        }
-    }
-
-    extractMovieFiles(html) {
-        // Extract .md files from directory listing
-        const matches = html.match(/href="([^"]+\.md)"/g) || [];
-        return matches.map(m => m.replace('href="', '').replace('"', ''));
-    }
-
-    async loadBasicMovieData(filename) {
-        try {
-            const response = await fetch(`/content/movies/${this.currentCategory}/${filename}`);
-            const content = await response.text();
-            
-            // Parse only the front matter for basic info
-            const frontMatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-            if (!frontMatterMatch) return null;
-            
-            const frontMatter = frontMatterMatch[1];
-            const data = {};
-            
-            // Parse only essential fields for related movies
-            frontMatter.split('\n').forEach(line => {
-                const match = line.match(/(title|posterUrl|releaseYear|duration|slug):\s*(.*)/);
-                if (match) {
-                    let [, key, value] = match;
-                    value = value.replace(/^["'](.*)["']$/, '$1').trim();
-                    data[key] = value;
-                }
-            });
-            
-            // Use filename as slug if not provided
-            if (!data.slug) {
-                data.slug = filename.replace('.md', '');
-            }
-            
-            data.category = this.currentCategory;
-            return data;
-            
-        } catch (error) {
-            console.log(`Failed to load ${filename}:`, error);
-            return null;
-        }
-    }
-
-    shuffleArray(array) {
-        // Fisher-Yates shuffle algorithm
-        const shuffled = [...array];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        return shuffled;
+    async findRelatedMovies() {
+        // Simple approach - return empty array if no related movies found
+        // You can implement directory scanning here if needed
+        return [];
     }
 
     renderRelatedMovies() {
@@ -795,9 +826,9 @@ class MoviePlayer {
         if (!this.relatedMovies.length) {
             container.innerHTML = `
                 <div style="grid-column:1/-1; text-align:center; color:#ccc; padding:2rem;">
-                    <p>No other movies found in this category yet.</p>
-                    <a href="/" style="background: var(--primary); color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; display: inline-block; margin-top: 1rem;">
-                        Browse All Movies
+                    <p>No other movies found in ${this.capitalizeFirst(this.movieData.category)} category yet.</p>
+                    <a href="/?category=${this.movieData.category}" style="background: var(--primary); color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; display: inline-block; margin-top: 1rem;">
+                        Browse ${this.capitalizeFirst(this.movieData.category)} Movies
                     </a>
                 </div>
             `;
@@ -815,6 +846,11 @@ class MoviePlayer {
                 </div>
             </a>
         `).join('');
+    }
+
+    setupSocialSharing() {
+        // Social sharing is already set up in the HTML
+        // This function is kept for future enhancements
     }
 
     // Utility functions
@@ -842,7 +878,9 @@ class MoviePlayer {
             'African movies',
             'streaming Rwanda',
             this.movieData.category,
-            this.movieData.language
+            this.movieData.language,
+            'watch online',
+            'free movies'
         ];
         
         if (this.movieData.tags && this.movieData.tags.length > 0) {
@@ -852,21 +890,12 @@ class MoviePlayer {
         return baseKeywords.join(', ');
     }
 
-    extractSeconds(duration) {
-        const match = duration.match(/(\d+)\s*min/);
-        return match ? parseInt(match[1]) * 60 : 1800;
-    }
-
     formatCast(castString) {
         if (!castString) return '[]';
         const castArray = castString.split(',').map(actor => 
             `{"@type": "Person", "name": "${this.escapeHTML(actor.trim())}"}`
         );
         return `[${castArray.join(', ')}]`;
-    }
-
-    addStructuredData() {
-        // Structured data is already included in the HTML
     }
 
     showError(message) {
@@ -898,4 +927,4 @@ if (document.readyState === 'loading') {
     });
 } else {
     new MoviePlayer();
-            }
+                        }
