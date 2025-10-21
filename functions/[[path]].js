@@ -57,8 +57,11 @@ async function getMarkdownContent(path, env) {
             throw new Error('GitHub configuration missing');
         }
 
+        // Updated path to include content directory
+        const fullPath = `content/${path}`;
+        
         const response = await fetch(
-            `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+            `https://api.github.com/repos/${owner}/${repo}/contents/${fullPath}`,
             {
                 headers: {
                     'Authorization': `token ${token}`,
@@ -104,9 +107,12 @@ async function getRelatedPosts(currentPath, env, currentSlug) {
         // Extract category from current path
         const category = currentPath.split('/')[0]; // movies or music
         
+        // Updated path to include content directory
+        const categoryPath = `content/${category}`;
+        
         // Get all files in the category directory
         const response = await fetch(
-            `https://api.github.com/repos/${owner}/${repo}/contents/${category}`,
+            `https://api.github.com/repos/${owner}/${repo}/contents/${categoryPath}`,
             {
                 headers: {
                     'Authorization': `token ${token}`,
@@ -167,7 +173,14 @@ function parseMarkdown(mdContent, path) {
             const separatorIndex = line.indexOf(':');
             if (separatorIndex > -1) {
                 const key = line.slice(0, separatorIndex).trim();
-                const value = line.slice(separatorIndex + 1).trim();
+                let value = line.slice(separatorIndex + 1).trim();
+                
+                // Remove quotes if present
+                if ((value.startsWith('"') && value.endsWith('"')) || 
+                    (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.slice(1, -1);
+                }
+                
                 metadata[key] = value;
             }
         } else {
@@ -179,8 +192,21 @@ function parseMarkdown(mdContent, path) {
     const slug = path.split('/').pop().replace('.md', '');
     const category = path.split('/')[0];
     
+    // Generate a readable title from slug if not provided
+    let title = metadata.title;
+    if (!title) {
+        title = slug
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ')
+            .replace(/[0-9]/g, '') // Remove numbers
+            .replace(/\b(ep|comedy|rwandan)\b/gi, '') // Remove common words
+            .replace(/\s+/g, ' ') // Clean up spaces
+            .trim();
+    }
+    
     return {
-        title: metadata.title || 'Untitled',
+        title: title || 'Untitled',
         description: metadata.description || content.substring(0, 160) + '...',
         releaseYear: metadata.releaseYear || new Date().getFullYear(),
         duration: metadata.duration || '',
@@ -629,4 +655,4 @@ function escapeHtml(unsafe) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
-}
+                }
