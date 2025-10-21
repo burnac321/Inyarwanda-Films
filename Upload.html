@@ -622,23 +622,25 @@
         }
 
         // Save movie to GitHub (this would call your Cloudflare Pages function)
-        async function saveMovieToGitHub(movieData) {
-            // This function would make a request to your Cloudflare Pages function
-            // that uses the GitHub token to create/update files in your repository
-            
-            try {
-                const response = await fetch('/api/upload-movie', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(movieData)
-                });
+        // In your HTML script section, update the saveMovieToGitHub function:
+async function saveMovieToGitHub(movieData) {
+    try {
+        const response = await fetch('/api/upload-movie', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(movieData)
+        });
 
-                return await response.json();
-            } catch (error) {
-                throw new Error('Failed to save movie data: ' + error.message);
-            }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        throw new Error('Failed to save movie data: ' + error.message);
+    }
         }
 
         // Initialize the form
