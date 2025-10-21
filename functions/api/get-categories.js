@@ -5,12 +5,9 @@ export async function onRequestGet(context) {
         // Get categories from GitHub
         const categories = await getCategoriesFromGitHub(env);
         
-        // If no categories exist, use defaults
-        const finalCategories = categories.length > 0 ? categories : ['drama', 'comedy', 'documentary', 'historical'];
-        
         return new Response(JSON.stringify({
             success: true,
-            categories: finalCategories
+            categories: categories
         }), {
             status: 200,
             headers: {
@@ -24,10 +21,10 @@ export async function onRequestGet(context) {
     } catch (error) {
         console.error('Error in get-categories:', error);
         
-        // Return default categories as fallback
+        // Return empty array as fallback
         return new Response(JSON.stringify({
             success: true,
-            categories: ['drama', 'comedy', 'documentary', 'historical']
+            categories: []
         }), {
             status: 200,
             headers: {
@@ -63,8 +60,8 @@ async function getCategoriesFromGitHub(env) {
         );
         
         if (response.status === 404) {
-            // Categories file doesn't exist yet, return empty array
-            console.log('Categories file does not exist yet');
+            // Categories file doesn't exist yet - this is normal for first use
+            console.log('Categories file does not exist yet. This is normal for first-time setup.');
             return [];
         }
         
@@ -87,4 +84,4 @@ async function getCategoriesFromGitHub(env) {
         console.error('Error fetching categories from GitHub:', error);
         return [];
     }
-}
+    }
