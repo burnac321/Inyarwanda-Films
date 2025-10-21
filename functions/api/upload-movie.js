@@ -2,27 +2,54 @@ export async function onRequestPost(context) {
     const { request, env } = context;
     
     try {
-        const movieData = await request.json();
+        // Check if request has JSON body
+        let movieData;
+        try {
+            movieData = await request.json();
+        } catch (parseError) {
+            return new Response(JSON.stringify({
+                success: false,
+                message: 'Invalid JSON in request body'
+            }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+        
+        // Validate required fields
+        if (!movieData.title || !movieData.category) {
+            return new Response(JSON.stringify({
+                success: false,
+                message: 'Missing required fields: title and category are required'
+            }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
         
         // Generate markdown content
         const markdownContent = generateMarkdown(movieData);
         
         // Generate file path
-        const fileName = `${movieData.slug}.md`;
+        const fileName = `${movieData.slug || generateSlug(movieData.title)}.md`;
         const filePath = `content/movies/${movieData.category}/${fileName}`;
+        
+        // Encode content to base64
+        const contentBase64 = btoa(unescape(encodeURIComponent(markdownContent)));
         
         // Create GitHub API request
         const githubResponse = await fetch(
-            `https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/contents/${filePath}`,
+            `https://api.github.com/repos/${env.GITHUB_REPO}/contents/${filePath}`,
             {
                 method: 'PUT',
                 headers: {
                     'Authorization': `token ${env.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     message: `Add movie: ${movieData.title}`,
-                    content: btoa(unescape(encodeURIComponent(markdownContent))),
+                    content: contentBase64,
                     branch: 'main'
                 })
             }
@@ -34,16 +61,19 @@ export async function onRequestPost(context) {
             return new Response(JSON.stringify({
                 success: true,
                 message: 'Movie uploaded successfully',
-                url: result.content.html_url
+                filePath: filePath,
+                githubUrl: result.content.html_url
             }), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
             });
         } else {
-            throw new Error(result.message || 'GitHub API error');
+            console.error('GitHub API error:', result);
+            throw new Error(result.message || `GitHub API error: ${githubResponse.status}`);
         }
         
     } catch (error) {
+        console.error('Function error:', error);
         return new Response(JSON.stringify({
             success: false,
             message: error.message
@@ -56,24 +86,24 @@ export async function onRequestPost(context) {
 
 function generateMarkdown(movieData) {
     return `---
-title: "${movieData.title}"
-releaseYear: ${movieData.releaseYear}
-duration: "${movieData.duration}"
-language: "${movieData.language}"
-category: "${movieData.category}"
-rating: "${movieData.rating}"
-quality: "${movieData.quality}"
-description: "${movieData.description}"
-videoUrl: "${movieData.videoUrl}"
-posterUrl: "${movieData.posterUrl}"
-director: "${movieData.director}"
-producer: "${movieData.producer}"
-mainCast: "${movieData.mainCast}"
-supportingCast: "${movieData.supportingCast}"
-metaDescription: "${movieData.metaDescription}"
-tags: ${JSON.stringify(movieData.tags)}
-slug: "${movieData.slug}"
-createdAt: "${movieData.createdAt}"
+title: "${escapeYaml(movieData.title)}"
+releaseYear: ${movieData.releaseYear || 2024}
+duration: "${escapeYaml(movieData.duration)}"
+language: "${escapeYaml(movieData.language)}"
+category: "${escapeYaml(movieData.category)}"
+rating: "${escapeYaml(movieData.rating || 'PG')}"
+quality: "${escapeYaml(movieData.quality || '1080p')}"
+description: "${escapeYaml(movieData.description)}"
+videoUrl: "${escapeYaml(movieData.videoUrl)}"
+posterUrl: "${escapeYaml(movieData.posterUrl)}"
+director: "${escapeYaml(movieData.director || '')}"
+producer: "${escapeYaml(movieData.producer || '')}"
+mainCast: "${escapeYaml(movieData.mainCast || '')}"
+supportingCast: "${escapeYaml(movieData.supportingCast || '')}"
+metaDescription: "${escapeYaml(movieData.metaDescription || movieData.description.substring(0, 157) + '...')}"
+tags: ${JSON.stringify(movieData.tags || [])}
+slug: "${escapeYaml(movieData.slug || generateSlug(movieData.title))}"
+createdAt: "${new Date().toISOString()}"
 ---
 
 # ${movieData.title}
@@ -91,10 +121,10 @@ ${movieData.description}
 
 ## Cast & Crew
 
-- **Director**: ${movieData.director}
-- **Producer**: ${movieData.producer}
-- **Main Cast**: ${movieData.mainCast}
-- **Supporting Cast**: ${movieData.supportingCast}
+- **Director**: ${movieData.director || 'Not specified'}
+- **Producer**: ${movieData.producer || 'Not specified'}
+- **Main Cast**: ${movieData.mainCast || 'Not specified'}
+- **Supporting Cast**: ${movieData.supportingCast || 'Not specified'}
 
 ## Watch Now
 
@@ -102,6 +132,20 @@ ${movieData.description}
 
 ---
 
-*Uploaded on ${new Date(movieData.createdAt).toLocaleDateString()}*
+*Uploaded on ${new Date().toLocaleDateString()}*
 `;
-              }
+}
+
+function generateSlug(title) {
+    return title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+function escapeYaml(str) {
+    if (!str) return '';
+    return str.replace(/"/g, '\\"').replace(/\n/g, ' ');
+                      }
