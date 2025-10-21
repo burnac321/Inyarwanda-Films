@@ -1,4 +1,4 @@
-// movie-player.js - Dynamic SEO Movie Page Generator
+// movie-player.js - Dynamic SEO Movie Page Generator (No JSON Required)
 class MoviePlayer {
     constructor() {
         this.movieData = null;
@@ -698,48 +698,95 @@ class MoviePlayer {
 
     async loadRelatedMovies() {
         try {
-            // Try to load from movies.json first
-            const response = await fetch('/content/movies/movies.json');
-            const allMovies = await response.json();
-            
-            // Filter to same category and exclude current movie
-            const sameCategoryMovies = allMovies.filter(movie => 
-                movie.category === this.movieData.category && 
-                movie.slug !== this.movieData.slug
-            );
-
-            // Sort by date (newest first)
-            sameCategoryMovies.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            // Get latest 2 uploads
-            const latestMovies = sameCategoryMovies.slice(0, 2);
-            
-            // Get current movie position and 2 movies before it
-            const currentMovieIndex = sameCategoryMovies.findIndex(movie => 
-                movie.slug === this.movieData.slug
-            );
-            
-            let previousMovies = [];
-            if (currentMovieIndex > 0) {
-                previousMovies = sameCategoryMovies.slice(
-                    Math.max(0, currentMovieIndex - 2), 
-                    currentMovieIndex
-                );
-            }
-
-            // Combine and remove duplicates
-            this.relatedMovies = [...latestMovies, ...previousMovies]
-                .filter((movie, index, self) => 
-                    index === self.findIndex(m => m.slug === movie.slug)
-                )
-                .slice(0, 4);
-            
+            // Scan the current category directory for other movies
+            this.relatedMovies = await this.scanCategoryForMovies();
         } catch (error) {
             console.error('Error loading related movies:', error);
             this.relatedMovies = [];
         }
-        
         this.renderRelatedMovies();
+    }
+
+    async scanCategoryForMovies() {
+        try {
+            // Get directory listing of the current category
+            const response = await fetch(`/content/movies/${this.currentCategory}/`);
+            const html = await response.text();
+            
+            // Extract all .md files from the directory
+            const movieFiles = this.extractMovieFiles(html);
+            
+            const movies = [];
+            
+            // Load basic info from each movie file (limit to 6 for performance)
+            for (const file of movieFiles.slice(0, 6)) {
+                const fileSlug = file.replace('.md', '');
+                // Skip the current movie
+                if (fileSlug !== this.currentSlug) {
+                    const movieData = await this.loadBasicMovieData(file);
+                    if (movieData) movies.push(movieData);
+                }
+            }
+            
+            // Return random 4 movies (or all if less than 4)
+            return this.shuffleArray(movies).slice(0, 4);
+            
+        } catch (error) {
+            console.log('Cannot scan directory, showing empty state');
+            return [];
+        }
+    }
+
+    extractMovieFiles(html) {
+        // Extract .md files from directory listing
+        const matches = html.match(/href="([^"]+\.md)"/g) || [];
+        return matches.map(m => m.replace('href="', '').replace('"', ''));
+    }
+
+    async loadBasicMovieData(filename) {
+        try {
+            const response = await fetch(`/content/movies/${this.currentCategory}/${filename}`);
+            const content = await response.text();
+            
+            // Parse only the front matter for basic info
+            const frontMatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+            if (!frontMatterMatch) return null;
+            
+            const frontMatter = frontMatterMatch[1];
+            const data = {};
+            
+            // Parse only essential fields for related movies
+            frontMatter.split('\n').forEach(line => {
+                const match = line.match(/(title|posterUrl|releaseYear|duration|slug):\s*(.*)/);
+                if (match) {
+                    let [, key, value] = match;
+                    value = value.replace(/^["'](.*)["']$/, '$1').trim();
+                    data[key] = value;
+                }
+            });
+            
+            // Use filename as slug if not provided
+            if (!data.slug) {
+                data.slug = filename.replace('.md', '');
+            }
+            
+            data.category = this.currentCategory;
+            return data;
+            
+        } catch (error) {
+            console.log(`Failed to load ${filename}:`, error);
+            return null;
+        }
+    }
+
+    shuffleArray(array) {
+        // Fisher-Yates shuffle algorithm
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
     }
 
     renderRelatedMovies() {
@@ -820,7 +867,6 @@ class MoviePlayer {
 
     addStructuredData() {
         // Structured data is already included in the HTML
-        // This function is kept for compatibility
     }
 
     showError(message) {
@@ -852,4 +898,4 @@ if (document.readyState === 'loading') {
     });
 } else {
     new MoviePlayer();
-                        }
+                }
