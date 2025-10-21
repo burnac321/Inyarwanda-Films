@@ -181,4 +181,4 @@ async function saveCategoriesToGitHub(categories, env) {
             message: 'Failed to save categories to GitHub: ' + error.message
         };
     }
-}
+                    }
