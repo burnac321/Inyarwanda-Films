@@ -1,4 +1,4 @@
-// movie-player.js - Final version with video controls & clean layout
+// movie-player.js - Standalone SEO-optimized movie page generator
 class MoviePlayer {
     constructor() {
         this.movieData = null;
@@ -10,10 +10,467 @@ class MoviePlayer {
     }
 
     async init() {
+        // Generate complete HTML structure
+        this.generateBaseHTML();
         await this.loadMovieFromURL();
         this.renderMoviePlayer();
         this.loadRelatedMovies();
         this.setupSEO();
+    }
+
+    generateBaseHTML() {
+        // Create complete HTML document structure
+        document.documentElement.innerHTML = `
+<!DOCTYPE html>
+<html lang="rw" itemscope itemtype="https://schema.org/WebPage">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Movie - Rwanda Cinema | Rwandan Movies Streaming</title>
+    <meta name="description" content="Watch Rwandan movies online. Stream latest Kinyarwanda films, comedies, dramas and documentaries.">
+    <meta name="keywords" content="Rwandan movies, Rwanda cinema, Kinyarwanda films, African movies, streaming">
+    <meta name="robots" content="index, follow">
+    
+    <!-- OpenGraph Meta Tags -->
+    <meta property="og:site_name" content="Rwanda Cinema">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="rw_RW">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@RwandaCinema">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="${window.location.href}">
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #008753;
+            --secondary: #FAD201;
+            --accent: #00A1DE;
+            --dark: #0a0a0a;
+            --light: #f8f9fa;
+            --card-bg: #1a1a1a;
+            --text-light: #e0e0e0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: var(--dark);
+            color: white;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Header */
+        .header {
+            background: var(--primary);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 3px solid var(--secondary);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            color: white;
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Video Player */
+        .video-section {
+            margin: 2rem 0 3rem;
+        }
+
+        .video-wrapper {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            margin-bottom: 2rem;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%;
+            background: #000;
+        }
+
+        .video-thumbnail {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .video-thumbnail.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .play-button {
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 135, 83, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            border: 4px solid white;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .play-button:hover {
+            background: #006641;
+            transform: scale(1.1);
+        }
+
+        .video-iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-iframe.odysee {
+            position: absolute !important;
+            top: -60px !important;
+            height: calc(100% + 120px) !important;
+        }
+
+        /* Video Info */
+        .video-info {
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: 0 0 12px 12px;
+        }
+
+        .video-title {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+
+        .video-stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            color: var(--text-light);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .video-description {
+            color: var(--text-light);
+            line-height: 1.7;
+            font-size: 1.1rem;
+        }
+
+        /* Movie Details */
+        .movie-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .details-card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+
+        .details-card h2 {
+            color: var(--secondary);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .meta-item {
+            margin-bottom: 1rem;
+        }
+
+        .meta-item strong {
+            color: var(--secondary);
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .meta-item p {
+            color: white;
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .cast-crew {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .cast-item {
+            background: #252525;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .cast-item strong {
+            color: var(--secondary);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .cast-item p {
+            color: white;
+            margin: 0;
+        }
+
+        /* Related Movies */
+        .related-section {
+            margin-top: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .related-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #333;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .related-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+            border-color: var(--primary);
+        }
+
+        .related-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .related-card-content {
+            padding: 1.25rem;
+        }
+
+        .related-card h3 {
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .related-card p {
+            color: #ccc;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--card-bg);
+            padding: 3rem 0;
+            margin-top: 4rem;
+            border-top: 3px solid var(--primary);
+            text-align: center;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .video-title {
+                font-size: 1.8rem;
+            }
+
+            .video-stats {
+                gap: 1rem;
+            }
+
+            .movie-details {
+                grid-template-columns: 1fr;
+            }
+
+            .related-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+        }
+
+        @media (max-width: 480px) {
+            .video-title {
+                font-size: 1.5rem;
+            }
+
+            .video-stats {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .related-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-light);
+        }
+
+        .spinner {
+            border: 4px solid #333;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" role="banner">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo" aria-label="Rwanda Cinema Home">
+                    🎬 Rwanda Cinema
+                </a>
+                <nav class="nav" role="navigation" aria-label="Main navigation">
+                    <a href="/" class="nav-link">Home</a>
+                    <a href="#" class="nav-link" id="categoryLink">Category</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container" role="main">
+        <div class="loading">
+            <div class="spinner" aria-hidden="true"></div>
+            <p>Loading movie...</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <p>&copy; 2024 Rwanda Cinema. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>`;
     }
 
     async loadMovieFromURL() {
@@ -82,370 +539,105 @@ class MoviePlayer {
             return;
         }
 
-        document.title = `${this.movieData.title} - Rwanda Cinema`;
+        // Update category link
+        const categoryLink = document.getElementById('categoryLink');
+        if (categoryLink) {
+            categoryLink.href = `/?category=${this.movieData.category}`;
+            categoryLink.textContent = this.movieData.category.charAt(0).toUpperCase() + this.movieData.category.slice(1);
+        }
 
-        document.body.innerHTML = `
-            <style>
-                .container {
-                    max-width: 1200px;
-                    margin: 0 auto;
-                    padding: 0 1rem;
-                }
-                
-                .video-wrapper {
-                    position: relative;
-                    width: 100%;
-                    background: #000;
-                    border-radius: 12px;
-                    overflow: hidden;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-                    margin-bottom: 2rem;
-                }
-                
-                /* 1280x720 Aspect Ratio */
-                .video-container {
-                    position: relative;
-                    width: 100%;
-                    height: 0;
-                    padding-bottom: 56.25%; /* 16:9 aspect ratio */
-                    background: #000;
-                }
-                
-                .video-thumbnail {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-size: cover;
-                    background-position: center;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: opacity 0.3s ease;
-                }
-                
-                .video-thumbnail.hidden {
-                    opacity: 0;
-                    pointer-events: none;
-                }
-                
-                .play-button {
-                    width: 80px;
-                    height: 80px;
-                    background: rgba(0, 135, 83, 0.9);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-size: 2rem;
-                    border: 4px solid white;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-                    transition: all 0.3s ease;
-                    cursor: pointer;
-                }
-                
-                .play-button:hover {
-                    background: #006641;
-                    transform: scale(1.1);
-                }
-                
-                .video-iframe {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    border: none;
-                }
-                
-                /* Hide Odysee logo and controls */
-                .video-iframe.odysee {
-                    position: absolute !important;
-                    top: -60px !important;
-                    height: calc(100% + 120px) !important;
-                }
-                
-                /* Video Info Section */
-                .video-info {
-                    padding: 1.5rem;
-                    background: #1a1a1a;
-                    border-radius: 0 0 12px 12px;
-                    border-top: 2px solid #008753;
-                }
-                
-                .video-title {
-                    font-size: 1.8rem;
-                    font-weight: bold;
-                    color: white;
-                    margin-bottom: 1rem;
-                    line-height: 1.3;
-                }
-                
-                .video-stats {
-                    display: flex;
-                    gap: 1rem;
-                    margin-bottom: 1rem;
-                    flex-wrap: wrap;
-                }
-                
-                .stat {
-                    color: #ccc;
-                    font-size: 0.9rem;
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                }
-                
-                .video-description {
-                    color: #e0e0e0;
-                    line-height: 1.6;
-                    font-size: 1rem;
-                }
-                
-                .movie-details {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                    gap: 2rem;
-                    margin-bottom: 3rem;
-                }
-                
-                .details-card {
-                    background: #1a1a1a;
-                    padding: 2rem;
-                    border-radius: 12px;
-                    border: 1px solid #333;
-                }
-                
-                .details-card h2 {
-                    color: #FAD201;
-                    font-size: 1.5rem;
-                    margin-bottom: 1.5rem;
-                    border-bottom: 2px solid #008753;
-                    padding-bottom: 0.5rem;
-                }
-                
-                .meta-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 1rem;
-                }
-                
-                .meta-item {
-                    margin-bottom: 1rem;
-                }
-                
-                .meta-item strong {
-                    color: #FAD201;
-                    display: block;
-                    margin-bottom: 0.25rem;
-                    font-size: 0.9rem;
-                }
-                
-                .meta-item p {
-                    color: white;
-                    margin: 0;
-                    font-size: 1rem;
-                }
-                
-                .cast-crew {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 1rem;
-                }
-                
-                .cast-item {
-                    background: #252525;
-                    padding: 1rem;
-                    border-radius: 8px;
-                    border-left: 4px solid #008753;
-                }
-                
-                .cast-item strong {
-                    color: #FAD201;
-                    display: block;
-                    margin-bottom: 0.5rem;
-                }
-                
-                .cast-item p {
-                    color: white;
-                    margin: 0;
-                }
-                
-                .related-section {
-                    margin-top: 3rem;
-                }
-                
-                .section-title {
-                    font-size: 1.8rem;
-                    color: #FAD201;
-                    margin-bottom: 1.5rem;
-                    padding-bottom: 0.5rem;
-                    border-bottom: 3px solid #008753;
-                }
-                
-                .related-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                    gap: 1.5rem;
-                }
-                
-                .related-card {
-                    background: #1a1a1a;
-                    border-radius: 12px;
-                    overflow: hidden;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    border: 1px solid #333;
-                }
-                
-                .related-card:hover {
-                    transform: translateY(-5px);
-                    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-                    border-color: #008753;
-                }
-                
-                .related-card img {
-                    width: 100%;
-                    height: 200px;
-                    object-fit: cover;
-                }
-                
-                .related-card-content {
-                    padding: 1.25rem;
-                }
-                
-                .related-card h3 {
-                    color: white;
-                    font-size: 1.1rem;
-                    margin-bottom: 0.5rem;
-                    line-height: 1.3;
-                }
-                
-                .related-card p {
-                    color: #ccc;
-                    font-size: 0.9rem;
-                    margin: 0;
-                }
-            </style>
-
-            <header style="background:#008753; padding:1rem; position:sticky; top:0; z-index:1000; border-bottom: 3px solid #FAD201;">
-                <div class="container" style="display:flex; justify-content:space-between; align-items:center;">
-                    <a href="/" style="color:white; text-decoration:none; font-size:1.5rem; font-weight:bold; display:flex; align-items:center; gap:0.5rem;">
-                        🎬 Rwanda Cinema
-                    </a>
-                    <nav style="display:flex; gap:1rem;">
-                        <a href="/" style="color:white; text-decoration:none; padding:0.5rem 1rem; border-radius:6px; transition:background 0.3s;">Home</a>
-                        <a href="/?category=${this.movieData.category}" style="color:white; text-decoration:none; padding:0.5rem 1rem; border-radius:6px; transition:background 0.3s; background:rgba(255,255,255,0.1);">${this.movieData.category.charAt(0).toUpperCase() + this.movieData.category.slice(1)}</a>
-                    </nav>
-                </div>
-            </header>
-
-            <main class="container" style="padding:2rem 0;">
-                <!-- Video Player Section -->
-                <section style="margin-bottom:3rem;">
-                    <div class="video-wrapper">
-                        <div class="video-container">
-                            ${this.renderVideoPlayer()}
+        const main = document.querySelector('main');
+        main.innerHTML = `
+            <!-- Video Section -->
+            <section class="video-section" itemscope itemtype="https://schema.org/Movie">
+                <div class="video-wrapper">
+                    <div class="video-container">
+                        ${this.renderVideoPlayer()}
+                    </div>
+                    
+                    <!-- Video Info with H1 Title -->
+                    <div class="video-info">
+                        <h1 class="video-title" itemprop="name">${this.movieData.title}</h1>
+                        
+                        <div class="video-stats">
+                            <span class="stat" itemprop="dateCreated">📅 ${this.movieData.releaseYear}</span>
+                            <span class="stat" itemprop="duration">⏱️ ${this.movieData.duration}</span>
+                            <span class="stat" itemprop="inLanguage">🗣️ ${this.movieData.language}</span>
+                            <span class="stat">🎬 ${this.movieData.quality}</span>
+                            <span class="stat" itemprop="contentRating">⭐ ${this.movieData.rating}</span>
                         </div>
-                        <div class="video-info">
-                            <h1 class="video-title">${this.movieData.title}</h1>
-                            <div class="video-stats">
-                                <span class="stat">📅 ${this.movieData.releaseYear}</span>
-                                <span class="stat">⏱️ ${this.movieData.duration}</span>
-                                <span class="stat">🗣️ ${this.movieData.language}</span>
-                                <span class="stat">🎬 ${this.movieData.quality}</span>
-                                <span class="stat">⭐ ${this.movieData.rating}</span>
+                        
+                        <p class="video-description" itemprop="description">${this.movieData.description}</p>
+                    </div>
+                </div>
+                
+                <!-- Movie Details with H2 Headings -->
+                <div class="movie-details">
+                    <div class="details-card">
+                        <h2>Movie Information</h2>
+                        <div class="meta-grid">
+                            <div class="meta-item">
+                                <strong>Category</strong>
+                                <p itemprop="genre">${this.movieData.category.charAt(0).toUpperCase() + this.movieData.category.slice(1)}</p>
                             </div>
-                            <p class="video-description">${this.movieData.description}</p>
+                            <div class="meta-item">
+                                <strong>Language</strong>
+                                <p itemprop="inLanguage">${this.movieData.language}</p>
+                            </div>
+                            <div class="meta-item">
+                                <strong>Quality</strong>
+                                <p>${this.movieData.quality}</p>
+                            </div>
+                            <div class="meta-item">
+                                <strong>Content Rating</strong>
+                                <p itemprop="contentRating">${this.movieData.rating}</p>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Movie Details Grid -->
-                    <div class="movie-details">
-                        <!-- Movie Information -->
-                        <div class="details-card">
-                            <h2>Movie Information</h2>
-                            <div class="meta-grid">
-                                <div class="meta-item">
-                                    <strong>Category</strong>
-                                    <p>${this.movieData.category.charAt(0).toUpperCase() + this.movieData.category.slice(1)}</p>
-                                </div>
-                                <div class="meta-item">
-                                    <strong>Language</strong>
-                                    <p>${this.movieData.language}</p>
-                                </div>
-                                <div class="meta-item">
-                                    <strong>Quality</strong>
-                                    <p>${this.movieData.quality}</p>
-                                </div>
-                                <div class="meta-item">
-                                    <strong>Content Rating</strong>
-                                    <p>${this.movieData.rating}</p>
-                                </div>
+                    <div class="details-card">
+                        <h2>Cast & Crew</h2>
+                        <div class="cast-crew">
+                            ${this.movieData.director ? `
+                            <div class="cast-item" itemprop="director" itemscope itemtype="https://schema.org/Person">
+                                <strong>Director</strong>
+                                <p itemprop="name">${this.movieData.director}</p>
                             </div>
-                        </div>
-                        
-                        <!-- Cast & Crew -->
-                        <div class="details-card">
-                            <h2>Cast & Crew</h2>
-                            <div class="cast-crew">
-                                ${this.movieData.director ? `
-                                <div class="cast-item">
-                                    <strong>Director</strong>
-                                    <p>${this.movieData.director}</p>
-                                </div>
-                                ` : ''}
-                                ${this.movieData.producer ? `
-                                <div class="cast-item">
-                                    <strong>Producer</strong>
-                                    <p>${this.movieData.producer}</p>
-                                </div>
-                                ` : ''}
-                                ${this.movieData.mainCast ? `
-                                <div class="cast-item" style="grid-column: 1 / -1;">
-                                    <strong>Main Cast</strong>
-                                    <p>${this.movieData.mainCast}</p>
-                                </div>
-                                ` : ''}
-                                ${this.movieData.supportingCast ? `
-                                <div class="cast-item" style="grid-column: 1 / -1;">
-                                    <strong>Supporting Cast</strong>
-                                    <p>${this.movieData.supportingCast}</p>
-                                </div>
-                                ` : ''}
-                                ${!this.movieData.director && !this.movieData.producer && !this.movieData.mainCast ? `
-                                <div class="cast-item" style="grid-column: 1 / -1;">
-                                    <p>Cast information not available</p>
-                                </div>
-                                ` : ''}
+                            ` : ''}
+                            ${this.movieData.producer ? `
+                            <div class="cast-item" itemprop="producer" itemscope itemtype="https://schema.org/Person">
+                                <strong>Producer</strong>
+                                <p itemprop="name">${this.movieData.producer}</p>
                             </div>
+                            ` : ''}
+                            ${this.movieData.mainCast ? `
+                            <div class="cast-item" style="grid-column: 1 / -1;">
+                                <strong>Main Cast</strong>
+                                <p itemprop="actor">${this.movieData.mainCast}</p>
+                            </div>
+                            ` : ''}
+                            ${!this.movieData.director && !this.movieData.producer && !this.movieData.mainCast ? `
+                            <div class="cast-item" style="grid-column: 1 / -1;">
+                                <p>Cast information not available</p>
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
-                </section>
-
-                <!-- Related Movies -->
-                <section class="related-section">
-                    <h2 class="section-title">
-                        More ${this.movieData.category.charAt(0).toUpperCase() + this.movieData.category.slice(1)} Movies
-                    </h2>
-                    <div id="related-movies" class="related-grid">
-                        <div style="text-align:center; color:#ccc; padding:2rem; grid-column:1/-1;">
-                            <div style="display:inline-block; padding:1rem 2rem; background:#1a1a1a; border-radius:8px;">
-                                Loading related movies...
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </main>
-
-            <footer style="background:#1a1a1a; padding:3rem 0; margin-top:4rem; border-top: 3px solid #008753;">
-                <div class="container" style="text-align:center;">
-                    <p style="color:#ccc; margin:0;">&copy; 2024 Rwanda Cinema. All rights reserved.</p>
                 </div>
-            </footer>
+            </section>
+
+            <!-- Related Movies with H2 Heading -->
+            <section class="related-section">
+                <h2 class="section-title">
+                    More ${this.movieData.category.charAt(0).toUpperCase() + this.movieData.category.slice(1)} Movies
+                </h2>
+                <div id="related-movies" class="related-grid">
+                    <div class="loading">
+                        <div class="spinner" aria-hidden="true"></div>
+                        <p>Loading related movies...</p>
+                    </div>
+                </div>
+            </section>
         `;
 
         // Setup video play functionality
@@ -456,20 +648,21 @@ class MoviePlayer {
         const videoUrl = this.movieData.videoUrl;
         const isOdysee = videoUrl.includes('odysee.com');
         
-        // Create thumbnail with play button
         return `
             <div class="video-thumbnail" id="videoThumbnail" 
-                 style="background-image: url('${this.movieData.posterUrl}')">
-                <div class="play-button" id="playButton">
+                 style="background-image: url('${this.movieData.posterUrl}')"
+                 itemprop="thumbnailUrl" content="${this.movieData.posterUrl}">
+                <div class="play-button" id="playButton" aria-label="Play movie">
                     ▶
                 </div>
             </div>
             <iframe class="video-iframe ${isOdysee ? 'odysee' : ''}" 
                     id="videoFrame" 
                     style="display: none;"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                     allowfullscreen
-                    title="Watch ${this.movieData.title}">
+                    title="Watch ${this.movieData.title}"
+                    itemprop="embedUrl" content="${videoUrl}">
             </iframe>
         `;
     }
@@ -483,11 +676,10 @@ class MoviePlayer {
         const startVideo = () => {
             let embedUrl = videoUrl;
             
-            // Convert to embed URL if needed
             if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
                 const videoId = this.extractYouTubeId(videoUrl);
                 if (videoId) {
-                    embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=1&showinfo=0`;
+                    embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=1&showinfo=0&fs=1`;
                 }
             } else if (videoUrl.includes('odysee.com')) {
                 embedUrl = videoUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/') + '?autoplay=1';
@@ -499,7 +691,6 @@ class MoviePlayer {
             this.videoPlaying = true;
         };
 
-        // Click on thumbnail or play button starts video
         thumbnail.addEventListener('click', startVideo);
         playButton.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -515,28 +706,22 @@ class MoviePlayer {
 
     async loadRelatedMovies() {
         try {
-            // Load all movies
             const response = await fetch('/content/movies/movies.json');
             const allMovies = await response.json();
             
-            // Filter movies from same category, excluding current movie
             const sameCategoryMovies = allMovies.filter(movie => 
                 movie.category === this.movieData.category && 
                 movie.slug !== this.movieData.slug
             );
 
-            // Sort by date (newest first)
             sameCategoryMovies.sort((a, b) => new Date(b.date) - new Date(a.date));
             
-            // Find current movie index
             const currentMovieIndex = sameCategoryMovies.findIndex(movie => 
                 movie.slug === this.movieData.slug
             );
 
-            // Get latest 2 uploads
             const latestMovies = sameCategoryMovies.slice(0, 2);
             
-            // Get 2 movies uploaded before current one
             let previousMovies = [];
             if (currentMovieIndex > 0) {
                 previousMovies = sameCategoryMovies.slice(
@@ -545,7 +730,6 @@ class MoviePlayer {
                 );
             }
 
-            // Combine both (remove duplicates)
             this.relatedMovies = [...latestMovies, ...previousMovies]
                 .filter((movie, index, self) => 
                     index === self.findIndex(m => m.slug === movie.slug)
@@ -567,7 +751,7 @@ class MoviePlayer {
             container.innerHTML = `
                 <div style="grid-column:1/-1; text-align:center; color:#ccc; padding:2rem;">
                     <p>No other movies found in this category yet.</p>
-                    <a href="/" style="background: #008753; color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; display: inline-block; margin-top: 1rem;">
+                    <a href="/" style="background: var(--primary); color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; display: inline-block; margin-top: 1rem;">
                         Browse All Movies
                     </a>
                 </div>
@@ -576,52 +760,51 @@ class MoviePlayer {
         }
 
         container.innerHTML = this.relatedMovies.map(movie => `
-            <div class="related-card" 
-                 onclick="window.location.href='/movie.html?category=${movie.category}&slug=${movie.slug}'">
+            <a href="/movie?category=${movie.category}&slug=${movie.slug}" class="related-card" itemprop="relatedLink">
                 <img src="${movie.posterUrl}" alt="${movie.title}" 
-                     onerror="this.src='https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=400&h=300&fit=crop'">
+                     onerror="this.src='https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=400&h=300&fit=crop'"
+                     itemprop="image">
                 <div class="related-card-content">
-                    <h3>${movie.title}</h3>
+                    <h3 itemprop="name">${movie.title}</h3>
                     <p>${movie.releaseYear} • ${movie.duration}</p>
                 </div>
-            </div>
+            </a>
         `).join('');
     }
 
     setupSEO() {
         if (!this.movieData) return;
 
-        // Update meta tags
+        // Update document title and meta description
+        document.title = `${this.movieData.title} - Rwanda Cinema | Rwandan ${this.movieData.category} Movie`;
+        
         let metaDesc = document.querySelector('meta[name="description"]');
-        if (!metaDesc) {
-            metaDesc = document.createElement('meta');
-            metaDesc.name = 'description';
-            document.head.appendChild(metaDesc);
+        if (metaDesc) {
+            metaDesc.content = this.movieData.metaDescription || this.movieData.description;
         }
-        metaDesc.content = this.movieData.metaDescription || this.movieData.description;
 
-        // Open Graph tags
-        const ogTags = [
-            { property: 'og:title', content: this.movieData.title },
-            { property: 'og:description', content: this.movieData.metaDescription || this.movieData.description },
-            { property: 'og:image', content: this.movieData.posterUrl },
-            { property: 'og:url', content: window.location.href },
-            { property: 'og:type', content: 'video.movie' },
-            { property: 'og:video', content: this.movieData.videoUrl },
-            { property: 'og:video:duration', content: this.extractMinutes(this.movieData.duration) }
-        ];
+        // Update OpenGraph tags
+        const ogTags = {
+            'og:title': this.movieData.title,
+            'og:description': this.movieData.metaDescription || this.movieData.description,
+            'og:image': this.movieData.posterUrl,
+            'og:url': window.location.href,
+            'og:type': 'video.movie',
+            'og:video': this.movieData.videoUrl,
+            'og:video:duration': this.extractMinutes(this.movieData.duration)
+        };
 
-        ogTags.forEach(tag => {
-            let meta = document.querySelector(`meta[property="${tag.property}"]`);
+        Object.entries(ogTags).forEach(([property, content]) => {
+            let meta = document.querySelector(`meta[property="${property}"]`);
             if (!meta) {
                 meta = document.createElement('meta');
-                meta.setAttribute('property', tag.property);
+                meta.setAttribute('property', property);
                 document.head.appendChild(meta);
             }
-            meta.setAttribute('content', tag.content);
+            meta.setAttribute('content', content);
         });
 
-        // Structured data
+        // Add JSON-LD structured data
         const structuredData = {
             "@context": "https://schema.org",
             "@type": "Movie",
@@ -640,13 +823,16 @@ class MoviePlayer {
             }
         };
 
-        const existingScript = document.querySelector('script[type="application/ld+json"]');
-        if (existingScript) existingScript.remove();
-
         const script = document.createElement('script');
         script.type = 'application/ld+json';
         script.text = JSON.stringify(structuredData);
         document.head.appendChild(script);
+
+        // Update canonical URL
+        const canonical = document.querySelector('link[rel="canonical"]');
+        if (canonical) {
+            canonical.href = window.location.href;
+        }
     }
 
     extractMinutes(duration) {
@@ -655,24 +841,24 @@ class MoviePlayer {
     }
 
     showError(message) {
-        document.body.innerHTML = `
-            <header style="background:#008753; padding:1rem;">
-                <div class="container">
-                    <a href="/" style="color:white; text-decoration:none; font-size:1.5rem; font-weight:bold;">🎬 Rwanda Cinema</a>
-                </div>
-            </header>
-            <main class="container" style="text-align:center; padding:4rem 1rem;">
-                <h1 style="color:#FAD201; margin-bottom:1rem; font-size:2rem;">Movie Not Found</h1>
-                <p style="color:#ccc; margin-bottom:2rem; font-size:1.1rem;">${message}</p>
-                <a href="/" style="background: #008753; color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; display: inline-block;">
+        const main = document.querySelector('main');
+        main.innerHTML = `
+            <div style="text-align:center; padding:4rem 2rem;">
+                <h1 style="color:var(--secondary); margin-bottom:1rem;">Movie Not Found</h1>
+                <p style="color:var(--text-light); margin-bottom:2rem;">${message}</p>
+                <a href="/" style="background: var(--primary); color: white; padding: 1rem 2rem; text-decoration: none; border-radius: 8px; display: inline-block;">
                     Back to Home
                 </a>
-            </main>
+            </div>
         `;
     }
 }
 
-// Initialize movie player when page loads
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize when page loads
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        new MoviePlayer();
+    });
+} else {
     new MoviePlayer();
-});
+    }
