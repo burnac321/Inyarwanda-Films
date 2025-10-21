@@ -519,79 +519,47 @@
 
             async loadAllVideos() {
                 try {
-                    // Scan for markdown files in content directory
-                    this.allVideos = await this.scanVideoFiles();
-                    this.categories = new Set(this.allVideos.map(video => video.category).filter(Boolean));
-                    
+                    // Define the video files we want to load
+                    const videoFiles = [
+                        // Comedy category
+                        'content/movies/comedy/papa-sava-arabikoz3.md',
+                        'content/movies/comedy/papa-sava-ooh.md',
+                        
+                        // Add more files as needed - you can expand this list
+                        // 'content/movies/drama/some-drama.md',
+                        // 'content/movies/action/some-action.md',
+                    ];
+
+                    // Load each video file
+                    for (const filePath of videoFiles) {
+                        try {
+                            const videoData = await this.loadVideoData(filePath);
+                            if (videoData) {
+                                this.allVideos.push(videoData);
+                                if (videoData.category) {
+                                    this.categories.add(videoData.category);
+                                }
+                            }
+                        } catch (error) {
+                            console.warn(`Could not load ${filePath}:`, error.message);
+                        }
+                    }
+
                     // Update navigation with categories
                     this.updateNavigation();
                     
                 } catch (error) {
                     console.error('Error loading videos:', error);
-                    this.showError('Failed to load videos');
+                    this.showError('Failed to load videos. Please check if the markdown files exist.');
                 }
-            }
-
-            async scanVideoFiles() {
-                const videos = [];
-                
-                try {
-                    // Try to get list of markdown files from your content directory
-                    // This would need to be adapted based on your actual file structure
-                    const response = await fetch('/content/index.json');
-                    if (response.ok) {
-                        const fileList = await response.json();
-                        for (const fileInfo of fileList) {
-                            try {
-                                const videoData = await this.loadVideoData(fileInfo.path);
-                                if (videoData) {
-                                    videos.push(videoData);
-                                }
-                            } catch (error) {
-                                console.error(`Error loading ${fileInfo.path}:`, error);
-                            }
-                        }
-                    } else {
-                        // Fallback: Try to scan common directories
-                        videos.push(...await this.scanCommonDirectories());
-                    }
-                } catch (error) {
-                    console.error('Error scanning files:', error);
-                    // If no API endpoint, use manual scanning
-                    videos.push(...await this.scanCommonDirectories());
-                }
-                
-                return videos.sort((a, b) => new Date(b.date) - new Date(a.date));
-            }
-
-            async scanCommonDirectories() {
-                const videos = [];
-                const categories = ['comedy', 'drama', 'action', 'documentary', 'romance'];
-                
-                for (const category of categories) {
-                    try {
-                        // Try to load a sample file from each category
-                        const sampleFile = `/content/movies/${category}/sample.md`;
-                        const response = await fetch(sampleFile);
-                        if (response.ok) {
-                            const videoData = await this.loadVideoData(sampleFile);
-                            if (videoData) {
-                                videos.push(videoData);
-                            }
-                        }
-                    } catch (error) {
-                        // Category directory might not exist, continue
-                        continue;
-                    }
-                }
-                
-                return videos;
             }
 
             async loadVideoData(filePath) {
                 try {
                     const response = await fetch(filePath);
-                    if (!response.ok) return null;
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
                     
                     const markdownContent = await response.text();
                     return this.parseVideoMarkdown(markdownContent, filePath);
@@ -604,7 +572,10 @@
             parseVideoMarkdown(content, filePath) {
                 try {
                     const frontMatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-                    if (!frontMatterMatch) return null;
+                    if (!frontMatterMatch) {
+                        console.warn(`No frontmatter found in ${filePath}`);
+                        return null;
+                    }
 
                     const frontMatter = frontMatterMatch[1];
                     const data = {};
@@ -613,24 +584,46 @@
                         const match = line.match(/(\w+):\s*(.*)/);
                         if (match) {
                             let [, key, value] = match;
-                            value = value.replace(/^["'](.*)["']$/, '$1').trim();
+                            value = value.trim();
                             
-                            if (key === 'tags' && value.startsWith('[')) {
-                                try { value = JSON.parse(value); } catch (e) { value = []; }
+                            // Remove quotes if present
+                            if ((value.startsWith('"') && value.endsWith('"')) || 
+                                (value.startsWith("'") && value.endsWith("'"))) {
+                                value = value.slice(1, -1);
                             }
-                            if (key === 'releaseYear') value = parseInt(value);
+                            
+                            // Parse specific types
+                            if (key === 'tags' && value.startsWith('[')) {
+                                try { 
+                                    value = JSON.parse(value.replace(/'/g, '"')); 
+                                } catch (e) { 
+                                    value = []; 
+                                }
+                            }
+                            if (key === 'releaseYear') {
+                                value = parseInt(value) || new Date().getFullYear();
+                            }
                             
                             data[key] = value;
                         }
                     });
 
-                    // Extract slug from filename
-                    const slugMatch = filePath.match(/\/([^\/]+)\.md$/);
-                    if (slugMatch) {
-                        data.slug = slugMatch[1];
+                    // Extract slug and category from file path
+                    const pathMatch = filePath.match(/content\/movies\/([^\/]+)\/([^\/]+)\.md$/);
+                    if (pathMatch) {
+                        data.category = pathMatch[1];
+                        data.slug = pathMatch[2];
+                        data.filePath = filePath;
                     }
 
+                    // Ensure required fields
+                    if (!data.title && data.slug) {
+                        data.title = this.capitalizeFirst(data.slug.replace(/[-_]/g, ' '));
+                    }
+
+                    console.log('Loaded video:', data.title, 'from', filePath);
                     return data;
+
                 } catch (error) {
                     console.error('Error parsing video markdown:', error);
                     return null;
@@ -684,7 +677,7 @@
                             <section class="category-section">
                                 <div class="section-header">
                                     <h2 class="section-title">${this.capitalizeFirst(category)} Movies</h2>
-                                    <a href="/?category=${category}" class="view-all">View All</a>
+                                    <a href="/?category=${category}" class="view-all">View All ${this.capitalizeFirst(category)}</a>
                                 </div>
                                 <div class="videos-grid">
                                     ${videos.slice(0, 6).map(video => this.generateVideoCard(video)).join('')}
@@ -773,7 +766,8 @@
                 <div class="video-card" data-category="${video.category || 'uncategorized'}">
                     <a href="${videoUrl}" class="video-link">
                         <div class="video-thumbnail">
-                            <img src="${posterUrl}" alt="${this.escapeHTML(video.title)}">
+                            <img src="${posterUrl}" alt="${this.escapeHTML(video.title)}" 
+                                 onerror="this.src='/images/default-poster.jpg'">
                             <div class="video-overlay">
                                 <div class="play-button">▶</div>
                             </div>
@@ -781,7 +775,7 @@
                         </div>
                         <div class="video-info">
                             <h3 class="video-title">${this.escapeHTML(video.title)}</h3>
-                            <p class="video-description">${this.escapeHTML(video.metaDescription || video.description || '')}</p>
+                            <p class="video-description">${this.escapeHTML(video.metaDescription || video.description || 'Watch this Rwandan movie')}</p>
                             <div class="video-meta">
                                 <span class="video-year">${video.releaseYear || '2024'}</span>
                                 <span class="video-duration">${video.duration || 'Unknown'}</span>
@@ -797,8 +791,13 @@
                 return `
                     <div class="no-results">
                         <h2>No Videos Found</h2>
-                        <p>Add markdown files in the content directory to display videos.</p>
-                        <p>Expected file structure: <code>content/movies/{category}/{slug}.md</code></p>
+                        <p>Add your markdown files to the <code>content/movies/</code> directory.</p>
+                        <p>Example: <code>content/movies/comedy/papa-sava-ooh.md</code></p>
+                        <p>Current videos being loaded:</p>
+                        <ul style="text-align: left; max-width: 500px; margin: 1rem auto;">
+                            <li>content/movies/comedy/papa-sava-arabikoz3.md</li>
+                            <li>content/movies/comedy/papa-sava-ooh.md</li>
+                        </ul>
                     </div>
                 `;
             }
@@ -838,4 +837,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
