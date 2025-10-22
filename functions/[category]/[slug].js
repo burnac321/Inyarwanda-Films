@@ -26,7 +26,7 @@ export async function onRequest(context) {
         status: 404,
         headers: { 
           'Content-Type': 'text/html; charset=UTF-8',
-          'Cache-Control': 'public, max-age=31536000' // 1 year cache for 404s
+          'Cache-Control': 'public, max-age=31536000'
         }
       });
     }
@@ -40,17 +40,20 @@ export async function onRequest(context) {
         status: 500,
         headers: { 
           'Content-Type': 'text/html; charset=UTF-8',
-          'Cache-Control': 'public, max-age=300' // 5 minutes cache for errors
+          'Cache-Control': 'public, max-age=300'
         }
       });
     }
 
-    const html = generateContentPage(contentData);
+    // Get other videos from the same category for related content
+    const relatedVideos = await getRelatedVideos(env, category, slug);
+    
+    const html = generateContentPage(contentData, relatedVideos);
     
     return new Response(html, {
       headers: {
         'Content-Type': 'text/html; charset=UTF-8',
-        'Cache-Control': 'public, max-age=31536000, immutable', // 1 year cache
+        'Cache-Control': 'public, max-age=31536000, immutable',
         'X-Content-Type-Options': 'nosniff',
       },
     });
@@ -59,9 +62,76 @@ export async function onRequest(context) {
       status: 500,
       headers: { 
         'Content-Type': 'text/html; charset=UTF-8',
-        'Cache-Control': 'public, max-age=300' // 5 minutes cache for errors
+        'Cache-Control': 'public, max-age=300'
       }
     });
+  }
+}
+
+async function getRelatedVideos(env, currentCategory, currentSlug) {
+  try {
+    const GITHUB_TOKEN = env.GITHUB_TOKEN;
+    const GITHUB_USERNAME = "burnac321";
+    const GITHUB_REPO = "Inyarwanda-Films";
+    
+    const categoryUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/content/movies/${currentCategory}`;
+    
+    const response = await fetch(categoryUrl, {
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'User-Agent': 'Inyarwanda-Films',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (!response.ok) return [];
+
+    const files = await response.json();
+    const videos = [];
+
+    // Get basic info from 2 other videos in the same category (excluding current)
+    for (const file of files) {
+      if (file.name.endsWith('.md') && file.type === 'file') {
+        const slug = file.name.replace('.md', '');
+        
+        // Skip the current video
+        if (slug === currentSlug) continue;
+        
+        // Get basic file content to extract title
+        const fileResponse = await fetch(file.url, {
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'User-Agent': 'Inyarwanda-Films',
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        
+        if (fileResponse.ok) {
+          const fileData = await fileResponse.json();
+          const content = atob(fileData.content);
+          const videoData = parseContentMarkdown(content, currentCategory, slug);
+          
+          if (videoData && videoData.title) {
+            videos.push({
+              title: videoData.title,
+              slug: slug,
+              category: currentCategory,
+              posterUrl: videoData.posterUrl,
+              duration: videoData.duration,
+              releaseYear: videoData.releaseYear
+            });
+          }
+        }
+        
+        // Only get 2 related videos
+        if (videos.length >= 2) break;
+      }
+    }
+    
+    return videos;
+  } catch (error) {
+    console.error('Error fetching related videos:', error);
+    return [];
   }
 }
 
@@ -90,7 +160,7 @@ function parseContentMarkdown(content, category, slug) {
   return data;
 }
 
-function generateContentPage(contentData) {
+function generateContentPage(contentData, relatedVideos) {
   const pageUrl = `https://inyarwanda-films.pages.dev/${contentData.category}/${contentData.slug}`;
   const isOdysee = contentData.videoUrl && contentData.videoUrl.includes('odysee.com');
   const embedUrl = isOdysee ? contentData.videoUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/') + '?r=1s8cJkToaSCoKtT2RyVTfP6V8ocp6cND' : contentData.videoUrl;
@@ -412,6 +482,134 @@ function generateContentPage(contentData) {
             color: white;
             margin: 0;
         }
+
+        /* Related Videos Section */
+        .related-section {
+            margin: 4rem 0;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: var(--secondary);
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+
+        .view-all {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+
+        .view-all:hover {
+            color: var(--secondary);
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .related-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .related-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+            border-color: var(--primary);
+        }
+
+        .related-thumbnail {
+            position: relative;
+            width: 100%;
+            height: 160px;
+            overflow: hidden;
+        }
+
+        .related-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .related-card:hover .related-thumbnail img {
+            transform: scale(1.05);
+        }
+
+        .related-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .related-card:hover .related-overlay {
+            opacity: 1;
+        }
+
+        .related-play {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 135, 83, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+            border: 2px solid white;
+        }
+
+        .related-info {
+            padding: 1.2rem;
+        }
+
+        .related-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+            color: white;
+        }
+
+        .related-meta {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .related-meta span {
+            background: rgba(255,255,255,0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
         
         .footer {
             background: var(--card-bg);
@@ -437,6 +635,16 @@ function generateContentPage(contentData) {
             .video-info {
                 padding: 1.5rem;
             }
+
+            .related-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
         }
         
         @media (max-width: 480px) {
@@ -453,6 +661,10 @@ function generateContentPage(contentData) {
                 width: 60px;
                 height: 60px;
                 font-size: 1.5rem;
+            }
+
+            .related-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -567,6 +779,37 @@ function generateContentPage(contentData) {
                 </div>
             </div>
         </section>
+
+        <!-- Related Videos Section -->
+        ${relatedVideos.length > 0 ? `
+        <section class="related-section">
+            <div class="section-header">
+                <h2 class="section-title">More ${capitalizeFirst(contentData.category)} Videos</h2>
+                <a href="/?category=${contentData.category}" class="view-all">View All ${capitalizeFirst(contentData.category)}</a>
+            </div>
+            <div class="related-grid">
+                ${relatedVideos.map(video => `
+                <a href="/${video.category}/${video.slug}" class="related-card">
+                    <div class="related-thumbnail">
+                        <img src="${video.posterUrl || 'https://inyarwanda-films.pages.dev/images/default-poster.jpg'}" 
+                             alt="${escapeHTML(video.title)}" 
+                             onerror="this.src='https://inyarwanda-films.pages.dev/images/default-poster.jpg'">
+                        <div class="related-overlay">
+                            <div class="related-play">▶</div>
+                        </div>
+                    </div>
+                    <div class="related-info">
+                        <h3 class="related-title">${escapeHTML(video.title)}</h3>
+                        <div class="related-meta">
+                            ${video.releaseYear ? `<span>${video.releaseYear}</span>` : ''}
+                            ${video.duration ? `<span>${video.duration}</span>` : ''}
+                        </div>
+                    </div>
+                </a>
+                `).join('')}
+            </div>
+        </section>
+        ` : ''}
     </main>
 
     <!-- Footer -->
@@ -658,4 +901,4 @@ function formatISODuration(duration) {
   }
   
   return 'PT28M'; // Default fallback
-}
+        }
