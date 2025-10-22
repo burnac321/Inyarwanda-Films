@@ -10,17 +10,15 @@ export async function onRequest(context) {
         
         // Handle different sitemap requests
         if (pathname === '/sitemap.xml' || pathname === '/') {
-            // Main sitemap or index
-            return generateSitemap(allVideoSlugs, baseUrl, pathname);
+            return generateMainSitemap(allVideoSlugs, baseUrl);
         } else if (pathname.startsWith('/sitemap-')) {
-            // Individual sitemap file (e.g., /sitemap-1.xml)
             return generateIndividualSitemap(allVideoSlugs, baseUrl, pathname);
         } else if (pathname === '/sitemap-categories.xml') {
-            // Categories sitemap
             return generateCategoriesSitemap(allVideoSlugs, baseUrl);
         }
         
-        return new Response('Sitemap not found', { status: 404 });
+        // If it's not a sitemap request, return 404
+        return new Response('Not found', { status: 404 });
         
     } catch (error) {
         console.error('Sitemap generation error:', error);
@@ -28,13 +26,15 @@ export async function onRequest(context) {
     }
 }
 
-function generateSitemap(allVideoSlugs, baseUrl, pathname) {
+function generateMainSitemap(allVideoSlugs, baseUrl) {
     const today = new Date().toISOString().split('T')[0];
     const MAX_URLS_PER_SITEMAP = 1000;
     
     // Count total URLs (homepage + categories + videos)
     const categories = [...new Set(allVideoSlugs.map(v => v.category).filter(Boolean))];
     const totalUrls = 1 + categories.length + allVideoSlugs.length;
+    
+    console.log(`Total URLs: ${totalUrls}, Video slugs: ${allVideoSlugs.length}`);
     
     // If under limit, generate single sitemap
     if (totalUrls <= MAX_URLS_PER_SITEMAP) {
@@ -87,7 +87,7 @@ function generateSingleSitemap(allVideoSlugs, baseUrl, today) {
     return new Response(sitemap, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=86400'
+            'Cache-Control': 'public, max-age=3600' // 1 hour cache
         }
     });
 }
@@ -115,7 +115,7 @@ function generateSitemapIndex(allVideoSlugs, baseUrl, today, maxUrls) {
     return new Response(sitemapIndex, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=86400'
+            'Cache-Control': 'public, max-age=3600'
         }
     });
 }
@@ -159,7 +159,7 @@ function generateIndividualSitemap(allVideoSlugs, baseUrl, pathname) {
     return new Response(sitemap, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=86400'
+            'Cache-Control': 'public, max-age=3600'
         }
     });
 }
@@ -193,7 +193,59 @@ function generateCategoriesSitemap(allVideoSlugs, baseUrl) {
     return new Response(sitemap, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=86400'
+            'Cache-Control': 'public, max-age=3600'
         }
     });
 }
+
+// Keep your existing getAllVideoSlugs and getCategorySlugs functions
+async function getAllVideoSlugs(env) {
+    const GITHUB_TOKEN = env.GITHUB_TOKEN;
+    const GITHUB_USERNAME = "burnac321";
+    const GITHUB_REPO = "Inyarwanda-Films";
+    
+    const categories = ['comedy', 'drama', 'music', 'action', 'documentary'];
+    const allSlugs = [];
+
+    for (const category of categories) {
+        try {
+            const categorySlugs = await getCategorySlugs(GITHUB_TOKEN, GITHUB_USERNAME, GITHUB_REPO, category);
+            allSlugs.push(...categorySlugs.map(slug => ({ category, slug })));
+        } catch (error) {
+            console.warn(`Failed to load ${category} slugs:`, error.message);
+        }
+    }
+
+    return allSlugs;
+}
+
+async function getCategorySlugs(token, username, repo, category) {
+    try {
+        const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/content/movies/${category}`;
+        
+        const response = await fetch(apiUrl, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'User-Agent': 'Inyarwanda-Films',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (!response.ok) return [];
+
+        const files = await response.json();
+        const slugs = [];
+        
+        for (const file of files) {
+            if (file.name.endsWith('.md') && file.type === 'file') {
+                const slug = file.name.replace('.md', '');
+                slugs.push(slug);
+            }
+        }
+        
+        return slugs;
+    } catch (error) {
+        console.error(`Error loading ${category} slugs:`, error);
+        return [];
+    }
+                }
