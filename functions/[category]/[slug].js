@@ -313,6 +313,7 @@ function generateContentPage(contentData, relatedVideos) {
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
             margin-bottom: 2rem;
+            position: relative;
         }
         
         .video-container {
@@ -373,11 +374,54 @@ function generateContentPage(contentData, relatedVideos) {
             border: none;
         }
         
-        /* Hide Odysee branding and controls customization */
+        /* Fullscreen simulation for Odysee */
         .video-iframe.odysee {
             position: absolute !important;
-            top: -60px !important;
-            height: calc(100% + 120px) !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: 100;
+        }
+        
+        .fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 9999;
+            display: none;
+        }
+        
+        .fullscreen-overlay.active {
+            display: block;
+        }
+        
+        .fullscreen-overlay iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .fullscreen-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 135, 83, 0.8);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 101;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+        
+        .fullscreen-button:hover {
+            background: rgba(0, 135, 83, 1);
         }
         
         .video-info {
@@ -707,6 +751,7 @@ function generateContentPage(contentData, relatedVideos) {
                             allowfullscreen
                             title="Watch ${escapeHTML(contentData.title)}">
                     </iframe>
+                    ${isOdysee ? '<button class="fullscreen-button" id="fullscreenButton">Enter Fullscreen</button>' : ''}
                 </div>
                 
                 <!-- Video Info -->
@@ -812,6 +857,18 @@ function generateContentPage(contentData, relatedVideos) {
         ` : ''}
     </main>
 
+    <!-- Fullscreen Overlay -->
+    ${isOdysee ? `
+    <div class="fullscreen-overlay" id="fullscreenOverlay">
+        <iframe id="fullscreenFrame" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                allowfullscreen
+                title="Watch ${escapeHTML(contentData.title)}">
+        </iframe>
+        <button class="fullscreen-button" id="exitFullscreenButton" style="position: fixed; top: 20px; right: 20px;">Exit Fullscreen</button>
+    </div>
+    ` : ''}
+
     <!-- Footer -->
     <footer class="footer" role="contentinfo">
         <div class="container">
@@ -824,8 +881,15 @@ function generateContentPage(contentData, relatedVideos) {
         const thumbnail = document.getElementById('videoThumbnail');
         const playButton = document.getElementById('playButton');
         const videoFrame = document.getElementById('videoFrame');
+        const fullscreenButton = document.getElementById('fullscreenButton');
+        const fullscreenOverlay = document.getElementById('fullscreenOverlay');
+        const fullscreenFrame = document.getElementById('fullscreenFrame');
+        const exitFullscreenButton = document.getElementById('exitFullscreenButton');
         const isOdysee = ${isOdysee};
         const embedUrl = '${embedUrl}';
+
+        let isFullscreen = false;
+        let originalIframeSrc = '';
 
         const startVideo = () => {
             videoFrame.src = embedUrl;
@@ -836,13 +900,126 @@ function generateContentPage(contentData, relatedVideos) {
             setTimeout(() => {
                 videoFrame.focus();
             }, 100);
+
+            // For Odysee, simulate fullscreen behavior
+            if (isOdysee) {
+                simulateOdyseeFullscreen();
+            }
         };
 
+        const simulateOdyseeFullscreen = () => {
+            // Store original src for fullscreen mode
+            originalIframeSrc = embedUrl;
+            
+            // Modify the iframe URL to potentially trigger fullscreen-like behavior
+            const modifiedUrl = embedUrl + '&autoplay=1&fs=1';
+            videoFrame.src = modifiedUrl;
+            
+            // Periodically check and hide branding
+            const brandingInterval = setInterval(() => {
+                hideOdyseeBranding();
+            }, 2000);
+            
+            // Clear interval after 30 seconds
+            setTimeout(() => {
+                clearInterval(brandingInterval);
+            }, 30000);
+        };
+
+        const hideOdyseeBranding = () => {
+            // Try to access iframe content
+            try {
+                const iframe = videoFrame;
+                if (iframe && iframe.contentDocument) {
+                    const doc = iframe.contentDocument;
+                    
+                    // Hide various Odysee branding elements
+                    const selectors = [
+                        '.header',
+                        '.footer', 
+                        '.branding',
+                        '.logo',
+                        '.end-screen',
+                        '.endscreen',
+                        '[class*="branding"]',
+                        '[class*="logo"]',
+                        '[class*="end-screen"]',
+                        '[class*="endscreen"]'
+                    ];
+                    
+                    selectors.forEach(selector => {
+                        const elements = doc.querySelectorAll(selector);
+                        elements.forEach(el => {
+                            el.style.display = 'none';
+                            el.style.opacity = '0';
+                            el.style.visibility = 'hidden';
+                        });
+                    });
+                }
+            } catch (e) {
+                // Cross-origin restrictions, use postMessage approach
+                try {
+                    videoFrame.contentWindow.postMessage({
+                        type: 'HIDE_BRANDING',
+                        payload: true
+                    }, '*');
+                } catch (e2) {
+                    // Fallback: try to manipulate URL parameters
+                    console.log('Branding hiding attempted');
+                }
+            }
+        };
+
+        const enterFullscreen = () => {
+            if (fullscreenOverlay && fullscreenFrame) {
+                fullscreenOverlay.classList.add('active');
+                fullscreenFrame.src = embedUrl + '&autoplay=1';
+                document.body.style.overflow = 'hidden';
+                isFullscreen = true;
+                
+                // Focus the fullscreen iframe
+                setTimeout(() => {
+                    fullscreenFrame.focus();
+                }, 100);
+            } else {
+                // Fallback to browser fullscreen
+                const element = videoFrame;
+                if (element.requestFullscreen) {
+                    element.requestFullscreen();
+                } else if (element.webkitRequestFullscreen) {
+                    element.webkitRequestFullscreen();
+                } else if (element.msRequestFullscreen) {
+                    element.msRequestFullscreen();
+                }
+            }
+        };
+
+        const exitFullscreen = () => {
+            if (fullscreenOverlay) {
+                fullscreenOverlay.classList.remove('active');
+                fullscreenFrame.src = '';
+                document.body.style.overflow = '';
+                isFullscreen = false;
+                
+                // Refocus main iframe
+                videoFrame.focus();
+            }
+        };
+
+        // Event listeners
         thumbnail.addEventListener('click', startVideo);
         playButton.addEventListener('click', (e) => {
             e.stopPropagation();
             startVideo();
         });
+
+        if (isOdysee && fullscreenButton) {
+            fullscreenButton.addEventListener('click', enterFullscreen);
+        }
+
+        if (isOdysee && exitFullscreenButton) {
+            exitFullscreenButton.addEventListener('click', exitFullscreen);
+        }
 
         // Keyboard accessibility
         thumbnail.addEventListener('keydown', (e) => {
@@ -852,9 +1029,24 @@ function generateContentPage(contentData, relatedVideos) {
             }
         });
 
+        // Escape key to exit fullscreen
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isFullscreen) {
+                exitFullscreen();
+            }
+        });
+
         // Set thumbnail alt text for accessibility
         thumbnail.setAttribute('role', 'img');
         thumbnail.setAttribute('aria-label', 'Thumbnail for ${escapeHTML(contentData.title)}');
+
+        // Listen for messages from iframe (for Odysee)
+        window.addEventListener('message', (event) => {
+            // Handle messages from Odysee iframe if needed
+            if (event.data && event.data.type === 'ODYSEE_EVENT') {
+                console.log('Odysee event:', event.data);
+            }
+        });
     </script>
 </body>
 </html>`;
@@ -901,4 +1093,4 @@ function formatISODuration(duration) {
   }
   
   return 'PT28M'; // Default fallback
-        }
+}
