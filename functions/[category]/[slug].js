@@ -24,7 +24,10 @@ export async function onRequest(context) {
     if (!response.ok) {
       return new Response('Content not found', { 
         status: 404,
-        headers: { 'Content-Type': 'text/html; charset=UTF-8' }
+        headers: { 
+          'Content-Type': 'text/html; charset=UTF-8',
+          'Cache-Control': 'public, max-age=31536000' // 1 year cache for 404s
+        }
       });
     }
 
@@ -33,7 +36,13 @@ export async function onRequest(context) {
     const contentData = parseContentMarkdown(markdownContent, category, slug);
 
     if (!contentData) {
-      return new Response('Error parsing content', { status: 500 });
+      return new Response('Error parsing content', { 
+        status: 500,
+        headers: { 
+          'Content-Type': 'text/html; charset=UTF-8',
+          'Cache-Control': 'public, max-age=300' // 5 minutes cache for errors
+        }
+      });
     }
 
     const html = generateContentPage(contentData);
@@ -41,10 +50,18 @@ export async function onRequest(context) {
     return new Response(html, {
       headers: {
         'Content-Type': 'text/html; charset=UTF-8',
+        'Cache-Control': 'public, max-age=31536000, immutable', // 1 year cache
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error) {
-    return new Response('Error loading content', { status: 500 });
+    return new Response('Error loading content', { 
+      status: 500,
+      headers: { 
+        'Content-Type': 'text/html; charset=UTF-8',
+        'Cache-Control': 'public, max-age=300' // 5 minutes cache for errors
+      }
+    });
   }
 }
 
@@ -78,8 +95,13 @@ function generateContentPage(contentData) {
   const isOdysee = contentData.videoUrl && contentData.videoUrl.includes('odysee.com');
   const embedUrl = isOdysee ? contentData.videoUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/') + '?r=1s8cJkToaSCoKtT2RyVTfP6V8ocp6cND' : contentData.videoUrl;
   
+  // Format duration for Schema.org (ISO 8601)
+  const isoDuration = formatISODuration(contentData.duration);
+  // Format upload date for Schema.org (ISO 8601)
+  const uploadDate = contentData.date ? new Date(contentData.date).toISOString() : new Date().toISOString();
+  
   return `<!DOCTYPE html>
-<html lang="rw" itemscope itemtype="http://schema.org/VideoObject">
+<html lang="rw">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -92,7 +114,7 @@ function generateContentPage(contentData) {
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="video.movie">
+    <meta property="og:type" content="video.episode">
     <meta property="og:url" content="${pageUrl}">
     <meta property="og:title" content="${escapeHTML(contentData.title)} | Watch Online - Inyarwanda Films">
     <meta property="og:description" content="${escapeHTML(contentData.metaDescription || contentData.description)}">
@@ -100,6 +122,9 @@ function generateContentPage(contentData) {
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="Inyarwanda Films">
+    <meta property="video:duration" content="${isoDuration ? isoDuration.replace('PT', '').replace('M', '') : '1680'}">
+    <meta property="video:release_date" content="${uploadDate}">
+    <meta property="video:series" content="Inyarwanda Films">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="player">
@@ -122,16 +147,24 @@ function generateContentPage(contentData) {
         "name": "${escapeHTML(contentData.title)}",
         "description": "${escapeHTML(contentData.metaDescription || contentData.description)}",
         "thumbnailUrl": "${contentData.posterUrl}",
-        "uploadDate": "${contentData.date || new Date().toISOString()}",
-        "duration": "${contentData.duration}",
+        "uploadDate": "${uploadDate}",
+        "duration": "${isoDuration || 'PT28M'}",
         "contentUrl": "${contentData.videoUrl}",
         "embedUrl": "${pageUrl}",
-        "genre": "${contentData.category}",
-        "inLanguage": "${contentData.language}",
-        "contentRating": "${contentData.rating}",
+        "genre": "${capitalizeFirst(contentData.category)}",
+        "inLanguage": "rw",
+        "contentRating": "${contentData.rating || 'G'}",
         "author": {
             "@type": "Organization",
             "name": "Inyarwanda Films"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Inyarwanda Films",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://inyarwanda-films.pages.dev/logo.png"
+            }
         }
     }
     </script>
@@ -446,12 +479,11 @@ function generateContentPage(contentData) {
         </nav>
 
         <!-- Video Section -->
-        <section class="video-section" itemscope itemtype="https://schema.org/VideoObject">
+        <section class="video-section">
             <div class="video-wrapper">
                 <div class="video-container">
                     <div class="video-thumbnail" id="videoThumbnail" 
-                         style="background-image: url('${contentData.posterUrl}')"
-                         itemprop="thumbnailUrl" content="${contentData.posterUrl}">
+                         style="background-image: url('${contentData.posterUrl}')">
                         <div class="play-button" id="playButton" aria-label="Play ${escapeHTML(contentData.title)}">
                             ▶
                         </div>
@@ -461,24 +493,23 @@ function generateContentPage(contentData) {
                             style="display: none;"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                             allowfullscreen
-                            title="Watch ${escapeHTML(contentData.title)}"
-                            itemprop="embedUrl" content="${pageUrl}">
+                            title="Watch ${escapeHTML(contentData.title)}">
                     </iframe>
                 </div>
                 
                 <!-- Video Info -->
                 <div class="video-info">
-                    <h1 class="video-title" itemprop="name">${escapeHTML(contentData.title)}</h1>
+                    <h1 class="video-title">${escapeHTML(contentData.title)}</h1>
                     
                     <div class="video-stats">
-                        <span class="stat" itemprop="dateCreated">📅 ${contentData.releaseYear}</span>
-                        <span class="stat" itemprop="duration">⏱️ ${contentData.duration}</span>
-                        <span class="stat" itemprop="inLanguage">🗣️ ${contentData.language}</span>
-                        <span class="stat">🎬 ${contentData.quality}</span>
-                        <span class="stat" itemprop="contentRating">⭐ ${contentData.rating}</span>
+                        <span class="stat">📅 ${contentData.releaseYear || '2025'}</span>
+                        <span class="stat">⏱️ ${contentData.duration}</span>
+                        <span class="stat">🗣️ ${contentData.language || 'Kinyarwanda'}</span>
+                        <span class="stat">🎬 ${contentData.quality || '1080p'}</span>
+                        <span class="stat">⭐ ${contentData.rating || 'G'}</span>
                     </div>
                     
-                    <p class="video-description" itemprop="description">${escapeHTML(contentData.description)}</p>
+                    <p class="video-description">${escapeHTML(contentData.description)}</p>
                 </div>
             </div>
             
@@ -489,19 +520,19 @@ function generateContentPage(contentData) {
                     <div class="meta-grid">
                         <div class="meta-item">
                             <strong>Category</strong>
-                            <p itemprop="genre">${capitalizeFirst(contentData.category)}</p>
+                            <p>${capitalizeFirst(contentData.category)}</p>
                         </div>
                         <div class="meta-item">
                             <strong>Language</strong>
-                            <p itemprop="inLanguage">${contentData.language}</p>
+                            <p>${contentData.language || 'Kinyarwanda'}</p>
                         </div>
                         <div class="meta-item">
                             <strong>Quality</strong>
-                            <p>${contentData.quality}</p>
+                            <p>${contentData.quality || '1080p'}</p>
                         </div>
                         <div class="meta-item">
                             <strong>Content Rating</strong>
-                            <p itemprop="contentRating">${contentData.rating}</p>
+                            <p>${contentData.rating || 'G'}</p>
                         </div>
                     </div>
                 </div>
@@ -510,21 +541,21 @@ function generateContentPage(contentData) {
                     <h2>Cast & Crew</h2>
                     <div class="cast-crew">
                         ${contentData.director ? `
-                        <div class="cast-item" itemprop="director" itemscope itemtype="https://schema.org/Person">
+                        <div class="cast-item">
                             <strong>Director</strong>
-                            <p itemprop="name">${escapeHTML(contentData.director)}</p>
+                            <p>${escapeHTML(contentData.director)}</p>
                         </div>
                         ` : ''}
                         ${contentData.producer ? `
-                        <div class="cast-item" itemprop="producer" itemscope itemtype="https://schema.org/Person">
+                        <div class="cast-item">
                             <strong>Producer</strong>
-                            <p itemprop="name">${escapeHTML(contentData.producer)}</p>
+                            <p>${escapeHTML(contentData.producer)}</p>
                         </div>
                         ` : ''}
                         ${contentData.mainCast ? `
                         <div class="cast-item" style="grid-column: 1 / -1;">
                             <strong>Main Cast</strong>
-                            <p itemprop="actor">${escapeHTML(contentData.mainCast)}</p>
+                            <p>${escapeHTML(contentData.mainCast)}</p>
                         </div>
                         ` : ''}
                         ${!contentData.director && !contentData.producer && !contentData.mainCast ? `
@@ -579,7 +610,8 @@ function generateContentPage(contentData) {
         });
 
         // Set thumbnail alt text for accessibility
-        thumbnail.querySelector('img')?.setAttribute('alt', 'Thumbnail for ${escapeHTML(contentData.title)}');
+        thumbnail.setAttribute('role', 'img');
+        thumbnail.setAttribute('aria-label', 'Thumbnail for ${escapeHTML(contentData.title)}');
     </script>
 </body>
 </html>`;
@@ -602,10 +634,28 @@ function generateKeywords(contentData) {
   const base = [
     'Rwandan movies', 'Kinyarwanda films', 'Inyarwanda Films', 
     'watch online', 'stream movies', contentData.category,
-    contentData.language, 'African cinema'
+    contentData.language || 'Kinyarwanda', 'African cinema'
   ];
   if (contentData.tags && contentData.tags.length > 0) {
     base.push(...contentData.tags);
   }
   return base.join(', ');
+}
+
+function formatISODuration(duration) {
+  if (!duration) return 'PT28M';
+  
+  // Convert "28 minutes" to "PT28M"
+  const match = duration.match(/(\d+)\s*minutes?/i);
+  if (match) {
+    return `PT${match[1]}M`;
   }
+  
+  // Convert "1h 45 minutes" to "PT1H45M"
+  const complexMatch = duration.match(/(\d+)h\s*(\d+)\s*minutes?/i);
+  if (complexMatch) {
+    return `PT${complexMatch[1]}H${complexMatch[2]}M`;
+  }
+  
+  return 'PT28M'; // Default fallback
+}
