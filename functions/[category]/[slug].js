@@ -160,15 +160,47 @@ function parseContentMarkdown(content, category, slug) {
   return data;
 }
 
+// Enhanced Odysee URL generator with fullscreen trick
+function getEnhancedOdyseeUrl(odyseeUrl) {
+  // Extract claim ID and title from Odysee URL
+  const urlParts = odyseeUrl.split('/');
+  const lastPart = urlParts[urlParts.length - 1];
+  const claimIdMatch = lastPart.match(/:([a-f0-9]+)$/);
+  
+  if (!claimIdMatch) {
+    return odyseeUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/') + '?r=1s8cJkToaSCoKtT2RyVTfP6V8ocp6cND';
+  }
+  
+  const claimId = claimIdMatch[1];
+  const videoTitle = lastPart.split(':')[0];
+  
+  // Try different parameters that might trigger fullscreen-like behavior
+  const fullscreenParams = [
+    '?autoplay=true&fullscreen=1', // Most likely to work
+    '?mode=fullscreen&autoplay=1',
+    '?view=full&autoplay=true', 
+    '?player=fullscreen&autoplay=1',
+    '?fs=1&autoplay=true'
+  ];
+  
+  const baseUrl = `https://odysee.com/$/embed/${videoTitle}:${claimId}`;
+  
+  // Use the most promising parameter combination
+  return baseUrl + fullscreenParams[0] + '&r=1s8cJkToaSCoKtT2RyVTfP6V8ocp6cND';
+}
+
 function generateContentPage(contentData, relatedVideos) {
   const pageUrl = `https://inyarwanda-films.pages.dev/${contentData.category}/${contentData.slug}`;
   const isOdysee = contentData.videoUrl && contentData.videoUrl.includes('odysee.com');
-  const embedUrl = isOdysee ? contentData.videoUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/') + '?r=1s8cJkToaSCoKtT2RyVTfP6V8ocp6cND' : contentData.videoUrl;
+  const embedUrl = isOdysee ? getEnhancedOdyseeUrl(contentData.videoUrl) : contentData.videoUrl;
   
   // Format duration for Schema.org (ISO 8601)
   const isoDuration = formatISODuration(contentData.duration);
   // Format upload date for Schema.org (ISO 8601)
   const uploadDate = contentData.date ? new Date(contentData.date).toISOString() : new Date().toISOString();
+  
+  // Get next video for auto-play suggestion
+  const nextVideo = relatedVideos.length > 0 ? relatedVideos[0] : null;
   
   return `<!DOCTYPE html>
 <html lang="rw">
@@ -313,6 +345,7 @@ function generateContentPage(contentData, relatedVideos) {
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
             margin-bottom: 2rem;
+            position: relative;
         }
         
         .video-container {
@@ -373,11 +406,40 @@ function generateContentPage(contentData, relatedVideos) {
             border: none;
         }
         
-        /* Hide Odysee branding and controls customization */
+        /* Enhanced Odysee styling to encourage fullscreen behavior */
         .video-iframe.odysee {
             position: absolute !important;
-            top: -60px !important;
-            height: calc(100% + 120px) !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            border: none !important;
+        }
+        
+        /* Custom overlay to suggest actions */
+        .video-suggestions {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .suggestion-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .suggestion-btn:hover {
+            background: #006641;
+            transform: translateY(-2px);
         }
         
         .video-info {
@@ -645,6 +707,12 @@ function generateContentPage(contentData, relatedVideos) {
                 gap: 1rem;
                 align-items: flex-start;
             }
+            
+            .video-suggestions {
+                bottom: 10px;
+                right: 10px;
+                flex-direction: column;
+            }
         }
         
         @media (max-width: 480px) {
@@ -707,6 +775,18 @@ function generateContentPage(contentData, relatedVideos) {
                             allowfullscreen
                             title="Watch ${escapeHTML(contentData.title)}">
                     </iframe>
+                    
+                    <!-- Video suggestions overlay -->
+                    <div class="video-suggestions" id="videoSuggestions" style="display: none;">
+                        <button class="suggestion-btn" onclick="showThumbnailAgain()">
+                            ↺ Watch Again
+                        </button>
+                        ${nextVideo ? `
+                        <button class="suggestion-btn" onclick="playNextVideo()">
+                            ⏭️ Next Video
+                        </button>
+                        ` : ''}
+                    </div>
                 </div>
                 
                 <!-- Video Info -->
@@ -824,19 +904,62 @@ function generateContentPage(contentData, relatedVideos) {
         const thumbnail = document.getElementById('videoThumbnail');
         const playButton = document.getElementById('playButton');
         const videoFrame = document.getElementById('videoFrame');
+        const videoSuggestions = document.getElementById('videoSuggestions');
         const isOdysee = ${isOdysee};
         const embedUrl = '${embedUrl}';
+        const nextVideo = ${nextVideo ? JSON.stringify(nextVideo) : 'null'};
+        
+        // Track video session for suggestions
+        let videoSession = {
+            startTime: null,
+            duration: ${contentData.duration ? parseDuration(contentData.duration) : 180},
+            userInteractions: 0
+        };
 
         const startVideo = () => {
             videoFrame.src = embedUrl;
             videoFrame.style.display = 'block';
             thumbnail.classList.add('hidden');
             
+            // Start video session tracking
+            videoSession.startTime = Date.now();
+            startSuggestionTimer();
+            
             // Focus on iframe for accessibility
             setTimeout(() => {
                 videoFrame.focus();
             }, 100);
         };
+
+        // Show suggestions after estimated video duration
+        function startSuggestionTimer() {
+            const estimatedEnd = videoSession.duration * 1000 + 30000; // +30 second buffer
+            
+            setTimeout(() => {
+                videoSuggestions.style.display = 'flex';
+            }, estimatedEnd);
+        }
+
+        function showThumbnailAgain() {
+            // Hide iframe and show thumbnail again
+            videoFrame.style.display = 'none';
+            thumbnail.classList.remove('hidden');
+            videoSuggestions.style.display = 'none';
+            
+            // Reset the iframe to restart video
+            videoFrame.src = '';
+        }
+
+        function playNextVideo() {
+            if (nextVideo) {
+                window.location.href = \`/\${nextVideo.category}/\${nextVideo.slug}\`;
+            }
+        }
+
+        // Track user interactions to reset timer
+        document.addEventListener('click', () => {
+            videoSession.userInteractions++;
+        });
 
         thumbnail.addEventListener('click', startVideo);
         playButton.addEventListener('click', (e) => {
@@ -855,6 +978,16 @@ function generateContentPage(contentData, relatedVideos) {
         // Set thumbnail alt text for accessibility
         thumbnail.setAttribute('role', 'img');
         thumbnail.setAttribute('aria-label', 'Thumbnail for ${escapeHTML(contentData.title)}');
+        
+        // Helper function to parse duration
+        function parseDuration(duration) {
+            if (!duration) return 180;
+            const minutesMatch = duration.match(/(\d+)\s*minutes?/i);
+            if (minutesMatch) return parseInt(minutesMatch[1]) * 60;
+            const hoursMinutesMatch = duration.match(/(\d+)h\s*(\d+)m/i);
+            if (hoursMinutesMatch) return (parseInt(hoursMinutesMatch[1]) * 3600) + (parseInt(hoursMinutesMatch[2]) * 60);
+            return 180;
+        }
     </script>
 </body>
 </html>`;
