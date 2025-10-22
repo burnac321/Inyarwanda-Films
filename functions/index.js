@@ -22,6 +22,9 @@ export async function onRequest(context) {
     const latestByCategory = getLatestVideosByCategory(allVideos, 5);
     const allCategories = [...new Set(allVideos.map(v => v.category).filter(Boolean))];
 
+    // Get popular videos for footer (most recent 6 videos)
+    const popularVideos = allVideos.slice(0, 6);
+
     const html = generateHomepageHTML({
       searchQuery,
       categoryFilter,
@@ -29,18 +32,24 @@ export async function onRequest(context) {
       allVideos,
       allCategories,
       latestByCategory,
+      popularVideos,
       baseUrl
     });
 
     return new Response(html, {
       headers: {
         'Content-Type': 'text/html; charset=UTF-8',
+        'Cache-Control': 'public, max-age=7200, s-maxage=14400', // 2-hour cache
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error) {
     console.error('Error generating homepage:', error);
     return new Response(generateErrorHTML(), {
-      headers: { 'Content-Type': 'text/html; charset=UTF-8' },
+      headers: { 
+        'Content-Type': 'text/html; charset=UTF-8',
+        'Cache-Control': 'public, max-age=300' // 5 minutes for errors
+      },
       status: 500
     });
   }
@@ -169,19 +178,32 @@ function getLatestVideosByCategory(videos, limit = 5) {
 }
 
 function generateHomepageHTML(data) {
-  const { searchQuery, categoryFilter, filteredVideos, allVideos, allCategories, latestByCategory, baseUrl } = data;
+  const { searchQuery, categoryFilter, filteredVideos, allVideos, allCategories, latestByCategory, popularVideos, baseUrl } = data;
   const isSearchOrFilter = searchQuery || categoryFilter;
 
   return `<!DOCTYPE html>
-<html lang="en" itemscope itemtype="http://schema.org/VideoGallery">
+<html lang="rw" itemscope itemtype="https://schema.org/VideoGallery">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
+    <!-- Essential Meta Tags -->
+    <link rel="canonical" href="${baseUrl}/" />
+    <meta name="theme-color" content="#008753">
+    <meta name="language" content="rw">
+    
+    <!-- Icons -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    
     <!-- Primary Meta Tags -->
-    <title>${isSearchOrFilter ? 'Search Results - Inyarwanda Films' : 'Inyarwanda Films | Watch Rwandan Movies Online'}</title>
-    <meta name="description" content="${isSearchOrFilter ? 'Search results for Rwandan movies and videos' : 'Watch latest Rwandan movies, Kinyarwanda films, comedy videos and entertainment. Stream high-quality content online for free.'}">
-    <meta name="keywords" content="Rwandan movies, Kinyarwanda films, Inyarwanda films, Rwanda cinema, African movies, watch online, free movies">
+    <title>${isSearchOrFilter ? 
+      `"${escapeHTML(searchQuery)}" ${categoryFilter ? `in ${capitalizeFirst(categoryFilter)}` : ''} - Inyarwanda Films` : 
+      'Inyarwanda Films | Watch Rwandan Movies & Kinyarwanda Films Online'}</title>
+    <meta name="description" content="${isSearchOrFilter ? 
+      `Search results for ${escapeHTML(searchQuery)} ${categoryFilter ? `in ${categoryFilter}` : 'Rwandan movies'}` : 
+      'Watch latest Rwandan movies, Kinyarwanda comedy series like Papa Sava, drama films and music videos. Stream African cinema online free.'}">
+    <meta name="keywords" content="Rwandan movies, Kinyarwanda films, Inyarwanda Films, watch online, stream movies, comedy, drama, music, African cinema, Rwanda entertainment">
     <meta name="author" content="Inyarwanda Films">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     
@@ -191,6 +213,8 @@ function generateHomepageHTML(data) {
     <meta property="og:title" content="Inyarwanda Films | Watch Rwandan Movies Online">
     <meta property="og:description" content="Watch latest Rwandan movies, Kinyarwanda films, comedy videos and entertainment. Stream high-quality content online for free.">
     <meta property="og:image" content="${baseUrl}/og-image.jpg">
+    <meta property="og:locale" content="rw_RW">
+    <meta property="og:site_name" content="Inyarwanda Films">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
@@ -203,14 +227,40 @@ function generateHomepageHTML(data) {
     {
         "@context": "https://schema.org",
         "@type": "VideoGallery",
-        "name": "Inyarwanda Films",
-        "description": "Watch latest Rwandan movies, Kinyarwanda films, comedy videos and documentaries online",
+        "name": "Inyarwanda Films - Rwandan Movies Online",
+        "description": "Watch latest Rwandan movies, Kinyarwanda comedy series, drama films and music videos online for free",
         "url": "${baseUrl}",
         "publisher": {
             "@type": "Organization",
-            "name": "Inyarwanda Films"
+            "name": "Inyarwanda Films",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "${baseUrl}/logo.png"
+            }
         },
-        "numberOfItems": ${allVideos.length}
+        "inLanguage": "rw",
+        "countryOfOrigin": "RW",
+        "numberOfItems": ${allVideos.length},
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "${baseUrl}"
+        }
+    }
+    </script>
+
+    <!-- Breadcrumb Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "${baseUrl}"
+            }
+        ]
     }
     </script>
     
@@ -328,6 +378,25 @@ function generateHomepageHTML(data) {
             background: rgba(255,255,255,0.1);
         }
 
+        /* Breadcrumb */
+        .breadcrumb {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: var(--secondary);
+            text-decoration: none;
+        }
+
+        .breadcrumb span {
+            color: var(--text-light);
+            margin: 0 0.5rem;
+        }
+
         /* Hero Section */
         .hero {
             text-align: center;
@@ -349,6 +418,28 @@ function generateHomepageHTML(data) {
             color: rgba(255,255,255,0.9);
             max-width: 600px;
             margin: 0 auto 2rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-button {
+            background: var(--secondary);
+            color: var(--dark);
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            background: #e6c100;
+            transform: translateY(-2px);
         }
 
         /* Video Grid */
@@ -531,15 +622,6 @@ function generateHomepageHTML(data) {
             color: var(--text-light);
         }
 
-        /* Footer */
-        .footer {
-            background: var(--card-bg);
-            padding: 3rem 0;
-            margin-top: 4rem;
-            border-top: 3px solid var(--primary);
-            text-align: center;
-        }
-
         /* Stats */
         .stats {
             display: flex;
@@ -561,6 +643,46 @@ function generateHomepageHTML(data) {
         }
 
         .stat-label {
+            color: var(--text-light);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--card-bg);
+            padding: 3rem 0;
+            margin-top: 4rem;
+            border-top: 3px solid var(--primary);
+        }
+
+        .footer-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            color: var(--secondary);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .footer-section a {
+            display: block;
+            color: var(--text-light);
+            text-decoration: none;
+            margin-bottom: 0.5rem;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: var(--accent);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
             color: var(--text-light);
         }
 
@@ -597,6 +719,15 @@ function generateHomepageHTML(data) {
 
             .stats {
                 gap: 2rem;
+            }
+
+            .footer-sections {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
             }
         }
 
@@ -650,6 +781,15 @@ function generateHomepageHTML(data) {
 
     <!-- Main Content -->
     <main class="container" role="main">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="${baseUrl}/">Home</a>
+            ${isSearchOrFilter ? `
+                <span>></span>
+                <span>${searchQuery ? `Search: "${escapeHTML(searchQuery)}"` : `Category: ${capitalizeFirst(categoryFilter)}`}</span>
+            ` : ''}
+        </nav>
+
         ${isSearchOrFilter ? `
             <!-- Search/Filter Results -->
             <div class="search-results">
@@ -672,15 +812,21 @@ function generateHomepageHTML(data) {
                     <div class="no-results">
                         <h2>No videos found</h2>
                         <p>Try adjusting your search terms or browse different categories.</p>
-                        <a href="${baseUrl}/" class="search-button" style="display: inline-block; margin-top: 1rem; text-decoration: none;">Browse All Videos</a>
+                        <a href="${baseUrl}/" class="cta-button">Browse All Videos</a>
                     </div>
                 `}
             </div>
         ` : `
             <!-- Homepage Content -->
-            <section class="hero">
-                <h1>Welcome to Inyarwanda Films</h1>
-                <p>Discover the best Rwandan movies, Kinyarwanda films, and entertainment content. Stream high-quality videos online for free.</p>
+            <section class="hero" itemprop="mainEntity" itemscope itemtype="https://schema.org/VideoGallery">
+                <h1 itemprop="headline">Watch Rwandan Movies Online - Kinyarwanda Films & Comedy</h1>
+                <p itemprop="description">Stream latest <strong>Rwandan comedy series</strong> like Papa Sava, <strong>Kinyarwanda drama films</strong>, and <strong>African music videos</strong>. 100% free streaming of authentic Rwandan entertainment.</p>
+                
+                <div class="cta-buttons">
+                    ${allCategories.slice(0, 3).map(category => `
+                        <a href="${baseUrl}/?category=${category}" class="cta-button">Watch ${capitalizeFirst(category)}</a>
+                    `).join('')}
+                </div>
             </section>
 
             <!-- Stats -->
@@ -694,14 +840,14 @@ function generateHomepageHTML(data) {
                     <span class="stat-label">Categories</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number">${Math.max(...allVideos.map(v => v.releaseYear || 2024))}</span>
+                    <span class="stat-number">${Math.max(...allVideos.map(v => v.releaseYear || new Date().getFullYear()))}</span>
                     <span class="stat-label">Latest Content</span>
                 </div>
             </div>
 
             <!-- Latest Videos by Category -->
             ${Object.entries(latestByCategory).map(([category, videos]) => videos.length > 0 ? `
-                <section class="category-section">
+                <section class="category-section" id="${category}">
                     <div class="section-header">
                         <h2 class="section-title">Latest ${capitalizeFirst(category)} Videos</h2>
                         <a href="${baseUrl}/?category=${category}" class="view-all">View All ${capitalizeFirst(category)}</a>
@@ -724,8 +870,34 @@ function generateHomepageHTML(data) {
     <!-- Footer -->
     <footer class="footer" role="contentinfo">
         <div class="container">
-            <p>&copy; ${new Date().getFullYear()} Inyarwanda Films. All rights reserved.</p>
-            <p>Streaming the best of Rwandan cinema to the world.</p>
+            <div class="footer-sections">
+                <div class="footer-section">
+                    <h3>Rwandan Movies</h3>
+                    ${allCategories.map(category => `
+                        <a href="${baseUrl}/?category=${category}">${capitalizeFirst(category)} Videos</a>
+                    `).join('')}
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Popular Content</h3>
+                    ${popularVideos.slice(0, 6).map(video => `
+                        <a href="${baseUrl}/${video.category}/${video.slug}">${escapeHTML(video.title)}</a>
+                    `).join('')}
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <a href="${baseUrl}/about">About Inyarwanda Films</a>
+                    <a href="${baseUrl}/contact">Contact Us</a>
+                    <a href="${baseUrl}/privacy">Privacy Policy</a>
+                    <a href="${baseUrl}/terms">Terms of Service</a>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; ${new Date().getFullYear()} Inyarwanda Films. All rights reserved.</p>
+                <p>Streaming Rwandan cinema to the world - Kinyarwanda Films | African Movies | Rwanda Entertainment</p>
+            </div>
         </div>
     </footer>
 </body>
@@ -737,10 +909,13 @@ function generateVideoCard(video, baseUrl) {
   const videoUrl = `${baseUrl}/${video.category}/${video.slug}`;
   
   return `
-  <div class="video-card" data-category="${video.category}">
-      <a href="${videoUrl}" class="video-link">
+  <div class="video-card" itemprop="hasPart" itemscope itemtype="https://schema.org/VideoObject">
+      <a href="${videoUrl}" class="video-link" itemprop="url">
           <div class="video-thumbnail">
-              <img src="${posterUrl}" alt="${escapeHTML(video.title)}" 
+              <img src="${posterUrl}" 
+                   alt="Watch ${escapeHTML(video.title)} - Rwandan ${capitalizeFirst(video.category)}" 
+                   itemprop="thumbnailUrl"
+                   loading="lazy"
                    onerror="this.src='${baseUrl}/images/default-poster.jpg'">
               <div class="video-overlay">
                   <div class="play-button">▶</div>
@@ -748,12 +923,12 @@ function generateVideoCard(video, baseUrl) {
               <div class="video-badge">${video.quality || 'HD'}</div>
           </div>
           <div class="video-info">
-              <h3 class="video-title">${escapeHTML(video.title)}</h3>
-              <p class="video-description">${escapeHTML(video.metaDescription || video.description || 'Watch this Rwandan content')}</p>
+              <h3 class="video-title" itemprop="name">${escapeHTML(video.title)}</h3>
+              <p class="video-description" itemprop="description">${escapeHTML(video.metaDescription || video.description || 'Watch this Rwandan content online')}</p>
               <div class="video-meta">
-                  <span class="video-year">${video.releaseYear || '2024'}</span>
-                  <span class="video-duration">${video.duration || ''}</span>
-                  <span class="video-category">${capitalizeFirst(video.category)}</span>
+                  <span class="video-year" itemprop="dateCreated">${video.releaseYear || new Date().getFullYear()}</span>
+                  <span class="video-duration" itemprop="duration">${video.duration || ''}</span>
+                  <span class="video-category" itemprop="genre">${capitalizeFirst(video.category)}</span>
               </div>
           </div>
       </a>
@@ -777,7 +952,7 @@ function capitalizeFirst(str) {
 
 function generateErrorHTML() {
   return `<!DOCTYPE html>
-<html>
+<html lang="rw">
 <head>
     <title>Error - Inyarwanda Films</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -793,4 +968,4 @@ function generateErrorHTML() {
     <a href="/">Go Back Home</a>
 </body>
 </html>`;
-  }
+                      }
