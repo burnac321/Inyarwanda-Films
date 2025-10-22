@@ -15,6 +15,8 @@ export async function onRequest(context) {
             return generateIndividualSitemap(allVideoSlugs, baseUrl, pathname);
         } else if (pathname === '/sitemap-categories.xml') {
             return generateCategoriesSitemap(allVideoSlugs, baseUrl);
+        } else if (pathname === '/sitemap-static.xml') {
+            return generateStaticSitemap(baseUrl);
         }
         
         // If it's not a sitemap request, return 404
@@ -30,9 +32,10 @@ function generateMainSitemap(allVideoSlugs, baseUrl) {
     const today = new Date().toISOString().split('T')[0];
     const MAX_URLS_PER_SITEMAP = 1000;
     
-    // Count total URLs (homepage + categories + videos)
+    // Count total URLs (static pages + homepage + categories + videos)
     const categories = [...new Set(allVideoSlugs.map(v => v.category).filter(Boolean))];
-    const totalUrls = 1 + categories.length + allVideoSlugs.length;
+    const staticPages = ['/about', '/privacy', '/terms', '/contact'];
+    const totalUrls = 1 + staticPages.length + categories.length + allVideoSlugs.length;
     
     console.log(`Total URLs: ${totalUrls}, Video slugs: ${allVideoSlugs.length}`);
     
@@ -46,17 +49,27 @@ function generateMainSitemap(allVideoSlugs, baseUrl) {
 }
 
 function generateSingleSitemap(allVideoSlugs, baseUrl, today) {
+    const staticPages = [
+        { url: '/', priority: '1.0', changefreq: 'daily' },
+        { url: '/about', priority: '0.7', changefreq: 'monthly' },
+        { url: '/privacy', priority: '0.3', changefreq: 'yearly' },
+        { url: '/terms', priority: '0.3', changefreq: 'yearly' },
+        { url: '/contact', priority: '0.5', changefreq: 'monthly' }
+    ];
+    
     let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
 
-    // Homepage
-    sitemap += `
+    // Static pages including homepage
+    staticPages.forEach(page => {
+        sitemap += `
     <url>
-        <loc>${baseUrl}/</loc>
+        <loc>${baseUrl}${page.url}</loc>
         <lastmod>${today}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>1.0</priority>
+        <changefreq>${page.changefreq}</changefreq>
+        <priority>${page.priority}</priority>
     </url>`;
+    });
 
     // Category pages
     const categories = [...new Set(allVideoSlugs.map(v => v.category).filter(Boolean))];
@@ -78,7 +91,7 @@ function generateSingleSitemap(allVideoSlugs, baseUrl, today) {
         <loc>${videoUrl}</loc>
         <lastmod>${today}</lastmod>
         <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
+        <priority>0.6</priority>
     </url>`;
     });
 
@@ -97,6 +110,10 @@ function generateSitemapIndex(allVideoSlugs, baseUrl, today, maxUrls) {
     
     let sitemapIndex = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <sitemap>
+        <loc>${baseUrl}/sitemap-static.xml</loc>
+        <lastmod>${today}</lastmod>
+    </sitemap>
     <sitemap>
         <loc>${baseUrl}/sitemap-categories.xml</loc>
         <lastmod>${today}</lastmod>
@@ -150,7 +167,7 @@ function generateIndividualSitemap(allVideoSlugs, baseUrl, pathname) {
         <loc>${videoUrl}</loc>
         <lastmod>${today}</lastmod>
         <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
+        <priority>0.6</priority>
     </url>`;
     });
     
@@ -185,6 +202,39 @@ function generateCategoriesSitemap(allVideoSlugs, baseUrl) {
         <lastmod>${today}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
+    </url>`;
+    });
+    
+    sitemap += '\n</urlset>';
+    
+    return new Response(sitemap, {
+        headers: {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Cache-Control': 'public, max-age=10800' // 3 hours
+        }
+    });
+}
+
+function generateStaticSitemap(baseUrl) {
+    const today = new Date().toISOString().split('T')[0];
+    const staticPages = [
+        { url: '/', priority: '1.0', changefreq: 'daily' },
+        { url: '/about', priority: '0.7', changefreq: 'monthly' },
+        { url: '/privacy', priority: '0.3', changefreq: 'yearly' },
+        { url: '/terms', priority: '0.3', changefreq: 'yearly' },
+        { url: '/contact', priority: '0.5', changefreq: 'monthly' }
+    ];
+    
+    let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
+    
+    staticPages.forEach(page => {
+        sitemap += `
+    <url>
+        <loc>${baseUrl}${page.url}</loc>
+        <lastmod>${today}</lastmod>
+        <changefreq>${page.changefreq}</changefreq>
+        <priority>${page.priority}</priority>
     </url>`;
     });
     
