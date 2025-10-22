@@ -87,7 +87,7 @@ function generateSingleSitemap(allVideoSlugs, baseUrl, today) {
     return new Response(sitemap, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600' // 1 hour cache
+            'Cache-Control': 'public, max-age=10800' // 3 hours
         }
     });
 }
@@ -115,7 +115,7 @@ function generateSitemapIndex(allVideoSlugs, baseUrl, today, maxUrls) {
     return new Response(sitemapIndex, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600'
+            'Cache-Control': 'public, max-age=10800' // 3 hours
         }
     });
 }
@@ -159,7 +159,7 @@ function generateIndividualSitemap(allVideoSlugs, baseUrl, pathname) {
     return new Response(sitemap, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600'
+            'Cache-Control': 'public, max-age=10800' // 3 hours
         }
     });
 }
@@ -193,12 +193,11 @@ function generateCategoriesSitemap(allVideoSlugs, baseUrl) {
     return new Response(sitemap, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600'
+            'Cache-Control': 'public, max-age=10800' // 3 hours
         }
     });
 }
 
-// Keep your existing getAllVideoSlugs and getCategorySlugs functions
 async function getAllVideoSlugs(env) {
     const GITHUB_TOKEN = env.GITHUB_TOKEN;
     const GITHUB_USERNAME = "burnac321";
@@ -248,4 +247,4 @@ async function getCategorySlugs(token, username, repo, category) {
         console.error(`Error loading ${category} slugs:`, error);
         return [];
     }
-                }
+}
