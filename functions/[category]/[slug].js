@@ -118,7 +118,8 @@ async function getRelatedVideos(env, currentCategory, currentSlug) {
               category: currentCategory,
               posterUrl: videoData.posterUrl,
               duration: videoData.duration,
-              releaseYear: videoData.releaseYear
+              releaseYear: videoData.releaseYear,
+              videoUrl: videoData.videoUrl
             });
           }
         }
@@ -164,6 +165,9 @@ function generateContentPage(contentData, relatedVideos) {
   const pageUrl = `https://inyarwanda-films.pages.dev/${contentData.category}/${contentData.slug}`;
   const isOdysee = contentData.videoUrl && contentData.videoUrl.includes('odysee.com');
   const embedUrl = isOdysee ? contentData.videoUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/') + '?r=1s8cJkToaSCoKtT2RyVTfP6V8ocp6cND' : contentData.videoUrl;
+  
+  // Get next video for navigation
+  const nextVideo = relatedVideos.length > 0 ? relatedVideos[0] : null;
   
   // Format duration for Schema.org (ISO 8601)
   const isoDuration = formatISODuration(contentData.duration);
@@ -313,6 +317,7 @@ function generateContentPage(contentData, relatedVideos) {
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
             margin-bottom: 2rem;
+            position: relative;
         }
         
         .video-container {
@@ -378,6 +383,110 @@ function generateContentPage(contentData, relatedVideos) {
             position: absolute !important;
             top: -60px !important;
             height: calc(100% + 120px) !important;
+        }
+        
+        /* Smart Next Button Styles */
+        .smart-next-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--primary), #006641);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 50;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 8px 25px rgba(0, 135, 83, 0.4);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            pointer-events: none;
+        }
+        
+        .smart-next-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+        
+        .smart-next-btn:hover {
+            background: linear-gradient(135deg, #006641, #005233);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 12px 35px rgba(0, 135, 83, 0.6);
+        }
+        
+        .smart-next-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+        
+        .smart-next-btn::after {
+            content: '→';
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+        
+        .smart-next-btn:hover::after {
+            transform: translateX(3px);
+        }
+        
+        .next-btn-preview {
+            position: absolute;
+            bottom: 70px;
+            right: 20px;
+            background: rgba(26, 26, 26, 0.95);
+            border-radius: 12px;
+            padding: 15px;
+            width: 200px;
+            opacity: 0;
+            transform: translateY(10px) scale(0.95);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 49;
+            pointer-events: none;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(15px);
+        }
+        
+        .next-btn-preview.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        
+        .preview-thumbnail {
+            width: 100%;
+            height: 100px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .preview-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .preview-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            line-height: 1.3;
+            margin-bottom: 5px;
+        }
+        
+        .preview-meta {
+            display: flex;
+            gap: 8px;
+            font-size: 10px;
+            color: var(--text-light);
         }
         
         .video-info {
@@ -645,6 +754,19 @@ function generateContentPage(contentData, relatedVideos) {
                 gap: 1rem;
                 align-items: flex-start;
             }
+            
+            .smart-next-btn {
+                bottom: 15px;
+                right: 15px;
+                padding: 10px 18px;
+                font-size: 12px;
+            }
+            
+            .next-btn-preview {
+                bottom: 60px;
+                right: 15px;
+                width: 180px;
+            }
         }
         
         @media (max-width: 480px) {
@@ -665,6 +787,19 @@ function generateContentPage(contentData, relatedVideos) {
 
             .related-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .smart-next-btn {
+                bottom: 10px;
+                right: 10px;
+                padding: 8px 16px;
+                font-size: 11px;
+            }
+            
+            .next-btn-preview {
+                bottom: 55px;
+                right: 10px;
+                width: 160px;
             }
         }
     </style>
@@ -707,6 +842,27 @@ function generateContentPage(contentData, relatedVideos) {
                             allowfullscreen
                             title="Watch ${escapeHTML(contentData.title)}">
                     </iframe>
+                    
+                    <!-- Smart Next Button -->
+                    ${nextVideo ? `
+                    <div class="next-btn-preview" id="nextBtnPreview">
+                        <div class="preview-thumbnail">
+                            <img src="${nextVideo.posterUrl || 'https://inyarwanda-films.pages.dev/images/default-poster.jpg'}" 
+                                 alt="${escapeHTML(nextVideo.title)}"
+                                 onerror="this.src='https://inyarwanda-films.pages.dev/images/default-poster.jpg'">
+                        </div>
+                        <div class="preview-title">${escapeHTML(nextVideo.title)}</div>
+                        <div class="preview-meta">
+                            ${nextVideo.releaseYear ? `<span>${nextVideo.releaseYear}</span>` : ''}
+                            ${nextVideo.duration ? `<span>${nextVideo.duration}</span>` : ''}
+                        </div>
+                    </div>
+                    
+                    <button class="smart-next-btn" id="smartNextBtn" 
+                            onclick="playNextVideo('${nextVideo.category}', '${nextVideo.slug}')">
+                        Next: ${escapeHTML(nextVideo.title.substring(0, 15))}...
+                    </button>
+                    ` : ''}
                 </div>
                 
                 <!-- Video Info -->
@@ -824,13 +980,23 @@ function generateContentPage(contentData, relatedVideos) {
         const thumbnail = document.getElementById('videoThumbnail');
         const playButton = document.getElementById('playButton');
         const videoFrame = document.getElementById('videoFrame');
+        const smartNextBtn = document.getElementById('smartNextBtn');
+        const nextBtnPreview = document.getElementById('nextBtnPreview');
         const isOdysee = ${isOdysee};
         const embedUrl = '${embedUrl}';
+        
+        let inactivityTimer;
+        let isVideoPlaying = false;
+        let isMouseOverPlayer = false;
 
         const startVideo = () => {
             videoFrame.src = embedUrl;
             videoFrame.style.display = 'block';
             thumbnail.classList.add('hidden');
+            isVideoPlaying = true;
+            
+            // Start monitoring inactivity
+            startInactivityTimer();
             
             // Focus on iframe for accessibility
             setTimeout(() => {
@@ -838,11 +1004,87 @@ function generateContentPage(contentData, relatedVideos) {
             }, 100);
         };
 
+        const startInactivityTimer = () => {
+            clearTimeout(inactivityTimer);
+            hideNextButton();
+            
+            inactivityTimer = setTimeout(() => {
+                if (isVideoPlaying && !isMouseOverPlayer) {
+                    showNextButton();
+                }
+            }, 3000); // 3 seconds inactivity
+        };
+
+        const showNextButton = () => {
+            if (smartNextBtn) {
+                smartNextBtn.classList.add('visible');
+                if (nextBtnPreview) {
+                    nextBtnPreview.classList.add('visible');
+                }
+            }
+        };
+
+        const hideNextButton = () => {
+            if (smartNextBtn) {
+                smartNextBtn.classList.remove('visible');
+                if (nextBtnPreview) {
+                    nextBtnPreview.classList.remove('visible');
+                }
+            }
+        };
+
+        const playNextVideo = (category, slug) => {
+            if (category && slug) {
+                window.location.href = '/' + category + '/' + slug;
+            }
+        };
+
+        // Event Listeners
         thumbnail.addEventListener('click', startVideo);
         playButton.addEventListener('click', (e) => {
             e.stopPropagation();
             startVideo();
         });
+
+        // Mouse movement detection
+        document.addEventListener('mousemove', () => {
+            if (isVideoPlaying) {
+                startInactivityTimer();
+            }
+        });
+
+        // Video frame interactions
+        if (videoFrame) {
+            videoFrame.addEventListener('mouseenter', () => {
+                isMouseOverPlayer = true;
+                hideNextButton();
+            });
+            
+            videoFrame.addEventListener('mouseleave', () => {
+                isMouseOverPlayer = false;
+                startInactivityTimer();
+            });
+            
+            videoFrame.addEventListener('click', () => {
+                hideNextButton();
+                startInactivityTimer();
+            });
+        }
+
+        // Smart next button hover effects
+        if (smartNextBtn) {
+            smartNextBtn.addEventListener('mouseenter', () => {
+                if (nextBtnPreview) {
+                    nextBtnPreview.classList.add('visible');
+                }
+            });
+            
+            smartNextBtn.addEventListener('mouseleave', () => {
+                if (nextBtnPreview && !smartNextBtn.classList.contains('visible')) {
+                    nextBtnPreview.classList.remove('visible');
+                }
+            });
+        }
 
         // Keyboard accessibility
         thumbnail.addEventListener('keydown', (e) => {
@@ -855,6 +1097,9 @@ function generateContentPage(contentData, relatedVideos) {
         // Set thumbnail alt text for accessibility
         thumbnail.setAttribute('role', 'img');
         thumbnail.setAttribute('aria-label', 'Thumbnail for ${escapeHTML(contentData.title)}');
+
+        // Global function for next video navigation
+        window.playNextVideo = playNextVideo;
     </script>
 </body>
 </html>`;
@@ -901,4 +1146,4 @@ function formatISODuration(duration) {
   }
   
   return 'PT28M'; // Default fallback
-        }
+            }
