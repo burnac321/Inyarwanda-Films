@@ -7,7 +7,7 @@ export async function onRequest(context) {
     const filePath = `content/movies/${category}/${slug}.md`;
 
     // Fetch the markdown file from your GitHub repo
-    const GITHUB_RAW_URL = `https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/${filePath}`;
+    const GITHUB_RAW_URL = `https://raw.githubusercontent.com/burnac321/Inyarwanda-Films/main/${filePath}`;
     
     const response = await fetch(GITHUB_RAW_URL);
     
