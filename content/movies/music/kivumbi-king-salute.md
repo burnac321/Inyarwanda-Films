@@ -6,7 +6,7 @@ language: "Kinyarwanda"
 category: "music"
 rating: "G"
 quality: "1080p"
-description: "Kivumbi King - Salute (Official Video) Release Date: June 24, 2022 Artist: Kivumbi King Location: Rwanda 🇷🇼 "
+description: "Kivumbi King - Salute (Official Video) Release Date: June 24, 2022 Artist: Kivumbi King Location: Rwanda"
 videoUrl: "https://odysee.com/Kivumbi-King---Salute-%28Official-Video%29%281080P_HD%29:cc1540417dff1ebfcafe31a7ebfaf2786926cc00"
 posterUrl: "https://img.youtube.com/vi/IyZiiL22s3k/maxresdefault.jpg"
 director: ""
@@ -24,7 +24,7 @@ date: "2025-10-23T10:26:45.020Z"
 Kivumbi King - Salute (Official Video)
 Release Date: June 24, 2022
 Artist: Kivumbi King
-Location: Rwanda 🇷🇼 
+Location: Rwanda
 
 ## Movie Details
 
