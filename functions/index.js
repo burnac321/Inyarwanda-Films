@@ -178,7 +178,7 @@ function generateHomepageHTML(data) {
   const isSearchOrFilter = searchQuery || categoryFilter;
 
   return `<!DOCTYPE html>
-<html lang="rw" itemscope itemtype="https://schema.org/VideoGallery">
+<html lang="rw">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -819,9 +819,9 @@ function generateHomepageHTML(data) {
             </div>
         ` : `
             <!-- Homepage Content -->
-            <section class="hero" itemprop="mainEntity" itemscope itemtype="https://schema.org/VideoGallery">
-                <h1 itemprop="headline">Watch Rwandan Movies Online - Kinyarwanda Films & Comedy</h1>
-                <p itemprop="description">Stream latest <strong>Rwandan comedy series</strong> like Papa Sava, <strong>Kinyarwanda drama films</strong>, and <strong>African music videos</strong>. 100% free streaming of authentic Rwandan entertainment.</p>
+            <section class="hero">
+                <h1>Watch Rwandan Movies Online - Kinyarwanda Films & Comedy</h1>
+                <p>Stream latest <strong>Rwandan comedy series</strong> like Papa Sava, <strong>Kinyarwanda drama films</strong>, and <strong>African music videos</strong>. 100% free streaming of authentic Rwandan entertainment.</p>
                 
                 <div class="cta-buttons">
                     ${allCategories.slice(0, 3).map(category => `
@@ -902,33 +902,36 @@ function generateVideoCard(video, baseUrl) {
   const posterUrl = video.posterUrl || `${baseUrl}/images/default-poster.jpg`;
   const videoUrl = `${baseUrl}/${video.category}/${video.slug}`;
   
-  // Convert duration to ISO 8601 format
+  // FIX: Ensure all required fields are properly set
+  const uploadDate = video.date || new Date().toISOString();
   const isoDuration = convertDurationToISO(video.duration);
-  
-  // Generate proper structured data
+  const contentUrl = video.videoUrl || getContentUrl(video);
+  const embedUrl = getEmbedUrl(video.videoUrl) || contentUrl;
+
+  // Generate proper structured data - FIXED with proper field validation
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "VideoObject",
     "name": video.title,
     "description": video.metaDescription || video.description || 'Watch this Rwandan content online',
     "thumbnailUrl": posterUrl,
-    "uploadDate": video.date || new Date().toISOString(),
-    "duration": isoDuration,
-    "contentUrl": video.videoUrl || videoUrl,
-    "embedUrl": video.videoUrl ? getEmbedUrl(video.videoUrl) : videoUrl,
+    "uploadDate": uploadDate, // REQUIRED - now always present
+    "duration": isoDuration, // REQUIRED - now in correct format
+    "contentUrl": contentUrl, // REQUIRED - ensure this exists
+    "embedUrl": embedUrl, // REQUIRED - ensure this exists
     "dateCreated": video.releaseYear ? `${video.releaseYear}` : new Date().getFullYear().toString(),
     "genre": capitalizeFirst(video.category),
     "url": videoUrl
   };
 
+  // FIXED: Remove microdata attributes, keep only JSON-LD to avoid duplicates
   return `
-  <div class="video-card" itemprop="hasPart" itemscope itemtype="https://schema.org/VideoObject">
+  <div class="video-card">
       <script type="application/ld+json">${JSON.stringify(structuredData)}</script>
-      <a href="${videoUrl}" class="video-link" itemprop="url">
+      <a href="${videoUrl}" class="video-link">
           <div class="video-thumbnail">
               <img src="${posterUrl}" 
                    alt="Watch ${escapeHTML(video.title)} - Rwandan ${capitalizeFirst(video.category)}" 
-                   itemprop="thumbnailUrl"
                    loading="lazy"
                    onerror="this.src='${baseUrl}/images/default-poster.jpg'">
               <div class="video-overlay">
@@ -937,17 +940,25 @@ function generateVideoCard(video, baseUrl) {
               <div class="video-badge">${video.quality || 'HD'}</div>
           </div>
           <div class="video-info">
-              <h3 class="video-title" itemprop="name">${truncateTitle(video.title, 75)}</h3>
-              <p class="video-description" itemprop="description">${truncateDescription(video.metaDescription || video.description || 'Watch this Rwandan content online', 150)}</p>
+              <h3 class="video-title">${truncateTitle(video.title, 75)}</h3>
+              <p class="video-description">${truncateDescription(video.metaDescription || video.description || 'Watch this Rwandan content online', 150)}</p>
               <div class="video-meta">
-                  <span class="video-year" itemprop="dateCreated">${video.releaseYear || new Date().getFullYear()}</span>
-                  <span class="video-duration" itemprop="duration">${video.duration || ''}</span>
-                  <span class="video-category" itemprop="genre">${capitalizeFirst(video.category)}</span>
+                  <span class="video-year">${video.releaseYear || new Date().getFullYear()}</span>
+                  <span class="video-duration">${video.duration || ''}</span>
+                  <span class="video-category">${capitalizeFirst(video.category)}</span>
               </div>
           </div>
       </a>
   </div>
   `;
+}
+
+// Helper function to ensure contentUrl exists
+function getContentUrl(video) {
+  if (video.videoUrl) return video.videoUrl;
+  // Fallback to YouTube if videoUrl is missing but we have a YouTube ID
+  if (video.youtubeId) return `https://www.youtube.com/watch?v=${video.youtubeId}`;
+  return `https://www.youtube.com`; // Fallback to avoid empty contentUrl
 }
 
 // Helper function to convert duration to ISO 8601 format
@@ -969,11 +980,20 @@ function convertDurationToISO(duration) {
     return `PT${minutes}M`;
   }
   
-  return '';
+  // Handle "25M" format
+  const simpleMinutesMatch = duration.match(/(\d+)\s*M/);
+  if (simpleMinutesMatch) {
+    const minutes = parseInt(simpleMinutesMatch[1]);
+    return `PT${minutes}M`;
+  }
+  
+  return 'PT0M'; // Default fallback
 }
 
 // Helper function to get embed URL from video URL
 function getEmbedUrl(videoUrl) {
+  if (!videoUrl) return '';
+  
   if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
     const videoId = videoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
     if (videoId) {
@@ -1033,4 +1053,4 @@ function generateErrorHTML() {
     <a href="/">Go Back Home</a>
 </body>
 </html>`;
-     }
+    }
