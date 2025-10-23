@@ -547,6 +547,11 @@ function generateHomepageHTML(data) {
             margin-bottom: 0.8rem;
             color: white;
             line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 2.8em;
         }
 
         .video-description {
@@ -554,6 +559,11 @@ function generateHomepageHTML(data) {
             font-size: 0.9rem;
             margin-bottom: 1rem;
             line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 4.2em;
         }
 
         .video-meta {
@@ -880,7 +890,7 @@ function generateHomepageHTML(data) {
                 <div class="footer-section">
                     <h3>Popular Content</h3>
                     ${popularVideos.slice(0, 6).map(video => `
-                        <a href="${baseUrl}/${video.category}/${video.slug}">${escapeHTML(video.title)}</a>
+                        <a href="${baseUrl}/${video.category}/${video.slug}">${truncateTitle(video.title, 50)}</a>
                     `).join('')}
                 </div>
                 
@@ -907,8 +917,28 @@ function generateVideoCard(video, baseUrl) {
   const posterUrl = video.posterUrl || `${baseUrl}/images/default-poster.jpg`;
   const videoUrl = `${baseUrl}/${video.category}/${video.slug}`;
   
+  // Convert duration to ISO 8601 format
+  const isoDuration = convertDurationToISO(video.duration);
+  
+  // Generate proper structured data
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": video.title,
+    "description": video.metaDescription || video.description || 'Watch this Rwandan content online',
+    "thumbnailUrl": posterUrl,
+    "uploadDate": video.date || new Date().toISOString(),
+    "duration": isoDuration,
+    "contentUrl": video.videoUrl || videoUrl,
+    "embedUrl": video.videoUrl ? getEmbedUrl(video.videoUrl) : videoUrl,
+    "dateCreated": video.releaseYear ? `${video.releaseYear}` : new Date().getFullYear().toString(),
+    "genre": capitalizeFirst(video.category),
+    "url": videoUrl
+  };
+
   return `
   <div class="video-card" itemprop="hasPart" itemscope itemtype="https://schema.org/VideoObject">
+      <script type="application/ld+json">${JSON.stringify(structuredData)}</script>
       <a href="${videoUrl}" class="video-link" itemprop="url">
           <div class="video-thumbnail">
               <img src="${posterUrl}" 
@@ -922,8 +952,8 @@ function generateVideoCard(video, baseUrl) {
               <div class="video-badge">${video.quality || 'HD'}</div>
           </div>
           <div class="video-info">
-              <h3 class="video-title" itemprop="name">${escapeHTML(video.title)}</h3>
-              <p class="video-description" itemprop="description">${escapeHTML(video.metaDescription || video.description || 'Watch this Rwandan content online')}</p>
+              <h3 class="video-title" itemprop="name">${truncateTitle(video.title, 75)}</h3>
+              <p class="video-description" itemprop="description">${truncateDescription(video.metaDescription || video.description || 'Watch this Rwandan content online', 150)}</p>
               <div class="video-meta">
                   <span class="video-year" itemprop="dateCreated">${video.releaseYear || new Date().getFullYear()}</span>
                   <span class="video-duration" itemprop="duration">${video.duration || ''}</span>
@@ -933,6 +963,57 @@ function generateVideoCard(video, baseUrl) {
       </a>
   </div>
   `;
+}
+
+// Helper function to convert duration to ISO 8601 format
+function convertDurationToISO(duration) {
+  if (!duration) return '';
+  
+  // Handle "3:11 minutes" format
+  const timeMatch = duration.match(/(\d+):(\d+)\s*minutes?/);
+  if (timeMatch) {
+    const minutes = parseInt(timeMatch[1]);
+    const seconds = parseInt(timeMatch[2]);
+    return `PT${minutes}M${seconds}S`;
+  }
+  
+  // Handle "20 minutes" format
+  const minutesMatch = duration.match(/(\d+)\s*minutes?/);
+  if (minutesMatch) {
+    const minutes = parseInt(minutesMatch[1]);
+    return `PT${minutes}M`;
+  }
+  
+  return '';
+}
+
+// Helper function to get embed URL from video URL
+function getEmbedUrl(videoUrl) {
+  if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+    const videoId = videoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId[1]}`;
+    }
+  }
+  if (videoUrl.includes('odysee.com')) {
+    // Odysee embed URLs are similar to regular URLs
+    return videoUrl;
+  }
+  return videoUrl;
+}
+
+// Helper function to truncate titles
+function truncateTitle(title, maxLength = 75) {
+  if (!title) return '';
+  if (title.length <= maxLength) return escapeHTML(title);
+  return escapeHTML(title.substring(0, maxLength)) + '...';
+}
+
+// Helper function to truncate descriptions
+function truncateDescription(description, maxLength = 150) {
+  if (!description) return '';
+  if (description.length <= maxLength) return escapeHTML(description);
+  return escapeHTML(description.substring(0, maxLength)) + '...';
 }
 
 function escapeHTML(str) {
@@ -967,4 +1048,4 @@ function generateErrorHTML() {
     <a href="/">Go Back Home</a>
 </body>
 </html>`;
-                      }
+                                         }
