@@ -193,8 +193,8 @@ function generateHomepageHTML(data) {
     <meta name="language" content="rw">
     
     <!-- Icons -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <link rel="icon" href="/icon.jpg">
+    <link rel="apple-touch-icon" href="/icon.jpg">
     
     <!-- Primary Meta Tags -->
     <title>${isSearchOrFilter ? 
