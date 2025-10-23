@@ -183,6 +183,7 @@ function generateContentPage(contentData, relatedVideos) {
     <meta name="keywords" content="${generateKeywords(contentData)}">
     <meta name="author" content="Inyarwanda Films">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="video.episode">
