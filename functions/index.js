@@ -193,8 +193,7 @@ function generateHomepageHTML(data) {
     <meta name="language" content="rw">
     
     <!-- Icons -->
-    <link rel="icon" href="/icon.jpg">
-    <link rel="apple-touch-icon" href="/icon.jpg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
     <!-- Primary Meta Tags -->
     <title>${isSearchOrFilter ? 
