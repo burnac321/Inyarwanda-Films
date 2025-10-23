@@ -166,9 +166,6 @@ function generateContentPage(contentData, relatedVideos) {
   const isOdysee = contentData.videoUrl && contentData.videoUrl.includes('odysee.com');
   const embedUrl = isOdysee ? contentData.videoUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/') + '?r=1s8cJkToaSCoKtT2RyVTfP6V8ocp6cND' : contentData.videoUrl;
   
-  // Get next video for navigation (first related video)
-  const nextVideo = relatedVideos.length > 0 ? relatedVideos[0] : null;
-  
   // Format duration for Schema.org (ISO 8601)
   const isoDuration = formatISODuration(contentData.duration);
   // Format upload date for Schema.org (ISO 8601)
@@ -266,6 +263,7 @@ function generateContentPage(contentData, relatedVideos) {
             color: white; 
             line-height: 1.6;
             min-height: 100vh;
+            padding-bottom: 80px; /* Space for floating button */
         }
         
         .container { 
@@ -309,10 +307,6 @@ function generateContentPage(contentData, relatedVideos) {
         .breadcrumb span {
             color: var(--text-light);
             margin: 0 0.5rem;
-        }
-        
-        .video-section {
-            position: relative;
         }
         
         .video-wrapper {
@@ -388,61 +382,52 @@ function generateContentPage(contentData, relatedVideos) {
             height: calc(100% + 120px) !important;
         }
         
-        /* Next Button in Black Extended Space */
-        .next-video-container {
-            position: absolute;
-            top: 100%;
+        /* Floating Next Button */
+        .floating-next-btn {
+            position: fixed;
+            bottom: 0;
             left: 0;
             width: 100%;
-            background: #000;
-            padding: 20px;
-            z-index: 45;
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            pointer-events: none;
-        }
-        
-        .next-video-container.visible {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: all;
-        }
-        
-        .next-video-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
             background: linear-gradient(135deg, var(--primary), #006641);
             color: white;
-            text-decoration: none;
-            padding: 15px 25px;
-            border-radius: 12px;
+            border: none;
+            padding: 18px 20px;
             font-weight: bold;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 25px rgba(0, 135, 83, 0.4);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            max-width: 400px;
+            cursor: pointer;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 16px;
+            text-decoration: none;
+            text-align: center;
         }
         
-        .next-video-button:hover {
-            background: linear-gradient(135deg, #006641, #005233);
-            transform: translateY(-2px);
-            box-shadow: 0 12px 35px rgba(0, 135, 83, 0.6);
-        }
-        
-        .next-video-button:active {
+        .floating-next-btn.visible {
+            opacity: 1;
             transform: translateY(0);
         }
         
-        .next-icon {
-            font-size: 18px;
-            font-weight: bold;
+        .floating-next-btn:hover {
+            background: linear-gradient(135deg, #006641, #005233);
         }
         
-        .next-title {
+        .floating-next-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .next-btn-icon {
+            font-size: 20px;
+        }
+        
+        .next-btn-text {
             font-size: 16px;
-            line-height: 1.3;
+            font-weight: bold;
         }
         
         .video-info {
@@ -711,13 +696,13 @@ function generateContentPage(contentData, relatedVideos) {
                 align-items: flex-start;
             }
             
-            .next-video-button {
-                padding: 12px 20px;
-                max-width: 100%;
+            .floating-next-btn {
+                padding: 16px 20px;
+                font-size: 15px;
             }
             
-            .next-title {
-                font-size: 14px;
+            .next-btn-text {
+                font-size: 15px;
             }
         }
         
@@ -741,16 +726,17 @@ function generateContentPage(contentData, relatedVideos) {
                 grid-template-columns: 1fr;
             }
             
-            .next-video-container {
-                padding: 15px;
+            .floating-next-btn {
+                padding: 14px 16px;
+                font-size: 14px;
             }
             
-            .next-video-button {
-                padding: 10px 16px;
+            .next-btn-text {
+                font-size: 14px;
             }
             
-            .next-title {
-                font-size: 13px;
+            .next-btn-icon {
+                font-size: 18px;
             }
         }
     </style>
@@ -794,16 +780,6 @@ function generateContentPage(contentData, relatedVideos) {
                             title="Watch ${escapeHTML(contentData.title)}">
                     </iframe>
                 </div>
-                
-                <!-- Next Video Button in Extended Black Space -->
-                ${nextVideo ? `
-                <div class="next-video-container" id="nextVideoContainer">
-                    <a href="/${nextVideo.category}/${nextVideo.slug}" class="next-video-button">
-                        <span class="next-icon">⏭️</span>
-                        <span class="next-title">Next: ${escapeHTML(nextVideo.title)}</span>
-                    </a>
-                </div>
-                ` : ''}
                 
                 <!-- Video Info -->
                 <div class="video-info">
@@ -878,7 +854,7 @@ function generateContentPage(contentData, relatedVideos) {
 
         <!-- Related Videos Section -->
         ${relatedVideos.length > 0 ? `
-        <section class="related-section">
+        <section class="related-section" id="relatedVideos">
             <div class="section-header">
                 <h2 class="section-title">More ${capitalizeFirst(contentData.category)} Videos</h2>
                 <a href="/?category=${contentData.category}" class="view-all">View All ${capitalizeFirst(contentData.category)}</a>
@@ -915,12 +891,20 @@ function generateContentPage(contentData, relatedVideos) {
         </div>
     </footer>
 
+    <!-- Floating Next Button -->
+    ${relatedVideos.length > 0 ? `
+    <a href="#relatedVideos" class="floating-next-btn" id="floatingNextBtn">
+        <span class="next-btn-icon">⏭️</span>
+        <span class="next-btn-text">Watch More ${capitalizeFirst(contentData.category)} Videos</span>
+    </a>
+    ` : ''}
+
     <script>
         // Video player functionality
         const thumbnail = document.getElementById('videoThumbnail');
         const playButton = document.getElementById('playButton');
         const videoFrame = document.getElementById('videoFrame');
-        const nextVideoContainer = document.getElementById('nextVideoContainer');
+        const floatingNextBtn = document.getElementById('floatingNextBtn');
         const isOdysee = ${isOdysee};
         const embedUrl = '${embedUrl}';
         
@@ -955,14 +939,14 @@ function generateContentPage(contentData, relatedVideos) {
         };
 
         const showNextButton = () => {
-            if (nextVideoContainer) {
-                nextVideoContainer.classList.add('visible');
+            if (floatingNextBtn) {
+                floatingNextBtn.classList.add('visible');
             }
         };
 
         const hideNextButton = () => {
-            if (nextVideoContainer) {
-                nextVideoContainer.classList.remove('visible');
+            if (floatingNextBtn) {
+                floatingNextBtn.classList.remove('visible');
             }
         };
 
@@ -1020,6 +1004,22 @@ function generateContentPage(contentData, relatedVideos) {
             }
         });
 
+        // Smooth scroll for the floating button
+        if (floatingNextBtn) {
+            floatingNextBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const relatedSection = document.getElementById('relatedVideos');
+                if (relatedSection) {
+                    relatedSection.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    // Hide the button after click
+                    hideNextButton();
+                }
+            });
+        }
+
         // Set thumbnail alt text for accessibility
         thumbnail.setAttribute('role', 'img');
         thumbnail.setAttribute('aria-label', 'Thumbnail for ${escapeHTML(contentData.title)}');
@@ -1069,4 +1069,4 @@ function formatISODuration(duration) {
   }
   
   return 'PT28M'; // Default fallback
-              }
+      }
