@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="rw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Upload Test - Inyarwanda Films</title>
+    <style>
+        :root {
+            --primary: #008753;
+            --secondary: #FAD201;
+            --dark: #0a0a0a;
+            --card-bg: #1a1a1a;
+            --border: #333;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--dark); color: white; font-family: system-ui; padding: 20px; }
+        
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 2rem; }
+        .logo { color: var(--secondary); font-size: 2rem; font-weight: bold; }
+        
+        .upload-form { background: var(--card-bg); padding: 2rem; border-radius: 12px; border: 1px solid var(--border); }
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; margin-bottom: 0.5rem; color: var(--secondary); font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: #2a2a2a; color: white; }
+        textarea { height: 80px; resize: vertical; }
+        .file-input { background: #333; padding: 10px; }
+        
+        .submit-btn { background: var(--primary); color: white; padding: 15px 30px; border: none; border-radius: 6px; font-size: 1.1rem; cursor: pointer; width: 100%; }
+        .submit-btn:hover { background: #006641; }
+        .submit-btn:disabled { background: #555; cursor: not-allowed; }
+        
+        .loading { display: none; text-align: center; margin: 1rem 0; }
+        .spinner { border: 3px solid #333; border-top: 3px solid var(--secondary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+        
+        .results { display: none; background: var(--card-bg); padding: 2rem; border-radius: 12px; margin-top: 2rem; border: 1px solid var(--primary); }
+        .success-badge { background: var(--primary); color: white; padding: 0.5rem 1rem; border-radius: 20px; display: inline-block; margin-bottom: 1rem; }
+        
+        .url-box { background: #2a2a2a; padding: 1rem; border-radius: 6px; margin: 1rem 0; border-left: 4px solid var(--secondary); }
+        .url-label { color: var(--secondary); font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .url-value { word-break: break-all; font-family: monospace; background: #1a1a1a; padding: 0.5rem; border-radius: 4px; }
+        
+        .copy-btn { background: var(--secondary); color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 0.5rem; font-weight: bold; }
+        .copy-btn:hover { background: #e6c301; }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎬 Inyarwanda Films - Upload Test</div>
+            <p>Test video uploads to Bunny.net storage</p>
+        </div>
+
+        <form id="uploadForm" class="upload-form" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="video">Video File (MP4) *</label>
+                <input type="file" id="video" name="video" accept="video/mp4" class="file-input" required>
+            </div>
+
+            <div class="form-group">
+                <label for="thumbnail">Thumbnail Image (Optional)</label>
+                <input type="file" id="thumbnail" name="thumbnail" accept="image/jpeg,image/png,image/webp" class="file-input">
+            </div>
+
+            <div class="form-group">
+                <label for="title">Video Title *</label>
+                <input type="text" id="title" name="title" placeholder="Enter video title" required>
+            </div>
+
+            <div class="form-group">
+                <label for="category">Category *</label>
+                <select id="category" name="category" required>
+                    <option value="">Select category</option>
+                    <option value="movies">Movies</option>
+                    <option value="series">Series</option>
+                    <option value="comedy">Comedy</option>
+                    <option value="drama">Drama</option>
+                    <option value="documentary">Documentary</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" placeholder="Enter video description"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="language">Language</label>
+                <input type="text" id="language" name="language" value="Kinyarwanda" placeholder="Language">
+            </div>
+
+            <div class="form-group">
+                <label for="quality">Quality</label>
+                <select id="quality" name="quality">
+                    <option value="1080p">1080p</option>
+                    <option value="720p">720p</option>
+                    <option value="480p">480p</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="releaseYear">Release Year</label>
+                <input type="number" id="releaseYear" name="releaseYear" value="2024" min="1900" max="2030">
+            </div>
+
+            <div class="form-group">
+                <label for="duration">Duration</label>
+                <input type="text" id="duration" name="duration" value="28 minutes" placeholder="e.g., 28 minutes">
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">Upload Video</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Uploading to Bunny.net... This may take a few minutes</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="success-badge">✅ Upload Successful!</div>
+            
+            <h3>📹 Video URL:</h3>
+            <div class="url-box">
+                <div class="url-label">Direct Video Link:</div>
+                <div class="url-value" id="videoUrl"></div>
+                <button class="copy-btn" onclick="copyToClipboard('videoUrl')">Copy Video URL</button>
+            </div>
+
+            <h3>🖼️ Thumbnail URL:</h3>
+            <div class="url-box">
+                <div class="url-label">Thumbnail Link:</div>
+                <div class="url-value" id="thumbnailUrl"></div>
+                <button class="copy-btn" onclick="copyToClipboard('thumbnailUrl')">Copy Thumbnail URL</button>
+            </div>
+
+            <h3>📝 Markdown Content:</h3>
+            <div class="url-box">
+                <div class="url-label">Copy this to your content file:</div>
+                <div class="url-value" id="markdownContent"></div>
+                <button class="copy-btn" onclick="copyToClipboard('markdownContent')">Copy Markdown</button>
+            </div>
+
+            <h3>📋 File Details:</h3>
+            <div class="url-box">
+                <div class="url-value" id="fileDetails"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            results.style.display = 'none';
+
+            try {
+                const formData = new FormData(this);
+                
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Display results
+                    document.getElementById('videoUrl').textContent = data.videoUrl;
+                    document.getElementById('thumbnailUrl').textContent = data.thumbnailUrl;
+                    document.getElementById('markdownContent').textContent = data.markdown;
+                    document.getElementById('fileDetails').textContent = 
+                        `Title: ${data.details.title}\nCategory: ${data.details.category}\nSlug: ${data.details.slug}\nVideo File: ${data.details.videoFileName}\nThumbnail File: ${data.details.thumbnailFileName}`;
+                    
+                    results.style.display = 'block';
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                } else {
+                    alert('Upload failed: ' + data.error);
+                }
+            } catch (error) {
+                alert('Upload error: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Auto-generate slug from title
+        document.getElementById('title').addEventListener('input', function() {
+            const slug = this.value.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            // You can display the generated slug somewhere if needed
+        });
+    </script>
+</body>
+</html>
