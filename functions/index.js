@@ -18,12 +18,9 @@ export async function onRequest(context) {
       filteredVideos = filteredVideos.filter(video => video.category === categoryFilter);
     }
 
-    // Get latest 5 videos per category for homepage sections
-    const latestByCategory = getLatestVideosByCategory(allVideos, 5);
+    // Get latest 8 videos per category for homepage sections
+    const latestByCategory = getLatestVideosByCategory(allVideos, 8);
     const allCategories = [...new Set(allVideos.map(v => v.category).filter(Boolean))];
-
-    // Get popular videos for footer (most recent 6 videos)
-    const popularVideos = allVideos.slice(0, 6);
 
     const html = generateHomepageHTML({
       searchQuery,
@@ -32,7 +29,6 @@ export async function onRequest(context) {
       allVideos,
       allCategories,
       latestByCategory,
-      popularVideos,
       baseUrl
     });
 
@@ -155,7 +151,7 @@ function searchVideos(videos, query) {
   );
 }
 
-function getLatestVideosByCategory(videos, limit = 5) {
+function getLatestVideosByCategory(videos, limit = 8) {
   const grouped = {};
   
   // Group videos by category
@@ -178,7 +174,7 @@ function getLatestVideosByCategory(videos, limit = 5) {
 }
 
 function generateHomepageHTML(data) {
-  const { searchQuery, categoryFilter, filteredVideos, allVideos, allCategories, latestByCategory, popularVideos, baseUrl } = data;
+  const { searchQuery, categoryFilter, filteredVideos, allVideos, allCategories, latestByCategory, baseUrl } = data;
   const isSearchOrFilter = searchQuery || categoryFilter;
 
   return `<!DOCTYPE html>
@@ -441,10 +437,10 @@ function generateHomepageHTML(data) {
             transform: translateY(-2px);
         }
 
-        /* Video Grid */
+        /* Video Grid - Fixed 2x4 layout */
         .videos-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 2rem;
             margin: 2rem 0;
         }
@@ -716,7 +712,7 @@ function generateHomepageHTML(data) {
             }
 
             .videos-grid {
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                grid-template-columns: 1fr;
                 gap: 1.5rem;
             }
 
@@ -741,10 +737,6 @@ function generateHomepageHTML(data) {
         }
 
         @media (max-width: 480px) {
-            .videos-grid {
-                grid-template-columns: 1fr;
-            }
-
             .hero {
                 padding: 3rem 1rem;
             }
@@ -884,13 +876,6 @@ function generateHomepageHTML(data) {
                     <h3>Rwandan Movies</h3>
                     ${allCategories.map(category => `
                         <a href="${baseUrl}/?category=${category}">${capitalizeFirst(category)} Videos</a>
-                    `).join('')}
-                </div>
-                
-                <div class="footer-section">
-                    <h3>Popular Content</h3>
-                    ${popularVideos.slice(0, 6).map(video => `
-                        <a href="${baseUrl}/${video.category}/${video.slug}">${truncateTitle(video.title, 50)}</a>
                     `).join('')}
                 </div>
                 
@@ -1048,4 +1033,4 @@ function generateErrorHTML() {
     <a href="/">Go Back Home</a>
 </body>
 </html>`;
-                                         }
+     }
