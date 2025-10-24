@@ -7,7 +7,7 @@ category: "comedy"
 rating: "G"
 quality: "1080p"
 description: "NYAXO COMEDY: Jus Za Salama — urwenya rusekeje rwo mu Rwanda rwuzuyemo ubuhanga, ubuzima bwa buri munsi n’inkuru zisetsa cyane."
-videoUrl: "https://youtu.be/Ci-YI2lFLc4?si=sIbxHZekYOUmC7Pz"
+videoUrl: "https://youtu.be/embed/Ci-YI2lFLc4?si=sIbxHZekYOUmC7Pz"
 posterUrl: "https://i.ytimg.com/vi/Ci-YI2lFLc4/maxresdefault.jpg"
 director: ""
 producer: ""
@@ -38,7 +38,7 @@ NYAXO COMEDY: Jus Za Salama — urwenya rusekeje rwo mu Rwanda rwuzuyemo ubuhang
 
 ## Watch Now
 
-[Click here to watch "NYAXO COMEDY: Jus za salama"](https://youtu.be/Ci-YI2lFLc4?si=sIbxHZekYOUmC7Pz)
+[Click here to watch "NYAXO COMEDY: Jus za salama"](https://youtu.be/embed/Ci-YI2lFLc4?si=sIbxHZekYOUmC7Pz)
 
 ---
 
