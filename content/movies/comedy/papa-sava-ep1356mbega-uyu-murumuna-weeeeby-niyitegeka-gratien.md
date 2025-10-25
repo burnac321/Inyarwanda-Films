@@ -7,7 +7,7 @@ category: "comedy"
 rating: "G"
 quality: "1080p"
 description: "PAPA SAVA EP1356:MBEGA UYU MURUMUNA WEEEE!By NIYITEGEKA Gratien(Rwandan Comedy"
-videoUrl: "https://youtu.be/embed/Mecq9222WD4"
+videoUrl: "https://youtu.be/Mecq9222WD4"
 posterUrl: "https://img.youtube.com/vi/Mecq9222WD4/maxresdefault.jpg"
 director: ""
 producer: ""
@@ -38,7 +38,7 @@ PAPA SAVA EP1356:MBEGA UYU MURUMUNA WEEEE!By NIYITEGEKA Gratien(Rwandan Comedy
 
 ## Watch Now
 
-[Click here to watch "PAPA SAVA EP1356:MBEGA UYU MURUMUNA WEEEE!"](https://youtu.be/embed/Mecq9222WD4)
+[Click here to watch "PAPA SAVA EP1356:MBEGA UYU MURUMUNA WEEEE!"](https://youtu.be/Mecq9222WD4)
 
 ---
 
