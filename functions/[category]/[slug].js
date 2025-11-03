@@ -747,7 +747,7 @@ function generateContentPage(contentData, relatedVideos) {
     <header class="header" role="banner">
         <div class="container">
             <a href="/" class="logo" aria-label="Inyarwanda Films Home">
-                🎬 Inyarwanda Films
+                🎬 Inyarwanda Cinema
             </a>
         </div>
     </header>
