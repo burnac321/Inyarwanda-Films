@@ -178,10 +178,10 @@ function generateContentPage(contentData, relatedVideos) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Primary Meta Tags -->
-    <title>${escapeHTML(contentData.title)} | Watch Online - Inyarwanda Films</title>
+    <title>${escapeHTML(contentData.title)} | Watch Online - Rwanda Cinema</title>
     <meta name="description" content="${escapeHTML(contentData.metaDescription || contentData.description)}">
     <meta name="keywords" content="${generateKeywords(contentData)}">
-    <meta name="author" content="Inyarwanda Films">
+    <meta name="author" content="Rwanda Cinema">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
@@ -193,15 +193,15 @@ function generateContentPage(contentData, relatedVideos) {
     <meta property="og:image" content="${contentData.posterUrl}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:site_name" content="Inyarwanda Films">
+    <meta property="og:site_name" content="Rwanda Cinema">
     <meta property="video:duration" content="${isoDuration ? isoDuration.replace('PT', '').replace('M', '') : '1680'}">
     <meta property="video:release_date" content="${uploadDate}">
-    <meta property="video:series" content="Inyarwanda Films">
+    <meta property="video:series" content="Rwanda Cinema">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="player">
     <meta property="twitter:url" content="${pageUrl}">
-    <meta property="twitter:title" content="${escapeHTML(contentData.title)} | Watch Online - Inyarwanda Films">
+    <meta property="twitter:title" content="${escapeHTML(contentData.title)} | Watch Online - Rwanda Cinema">
     <meta property="twitter:description" content="${escapeHTML(contentData.metaDescription || contentData.description)}">
     <meta property="twitter:image" content="${contentData.posterUrl}">
     <meta property="twitter:player" content="${pageUrl}">
@@ -235,7 +235,7 @@ function generateContentPage(contentData, relatedVideos) {
             "name": "Inyarwanda Films",
             "logo": {
                 "@type": "ImageObject",
-                "url": "https://inyarwanda-films.pages.dev/logo.png"
+                "url": "https://rwandacinema.site/logo.png"
             }
         }
     }
@@ -747,7 +747,7 @@ function generateContentPage(contentData, relatedVideos) {
     <header class="header" role="banner">
         <div class="container">
             <a href="/" class="logo" aria-label="Inyarwanda Films Home">
-                🎬 Inyarwanda Cinema
+                🎬 Rwanda Cinema
             </a>
         </div>
     </header>
