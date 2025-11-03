@@ -197,37 +197,37 @@ function generateHomepageHTML(data) {
       'Inyarwanda Films | Watch Rwandan Movies & Kinyarwanda Films Online'}</title>
     <meta name="description" content="${isSearchOrFilter ? 
       `Search results for ${escapeHTML(searchQuery)} ${categoryFilter ? `in ${categoryFilter}` : 'Rwandan movies'}` : 
-      'Watch latest Rwandan movies, Kinyarwanda comedy series like Papa Sava, drama films and music videos. Stream African cinema online free.'}">
+      'Watch latest Rwandan movies, Kinyarwanda comedy series like Papa Sava, drama films and Rwandan Music videos. Stream African cinema online free.'}">
     <meta name="keywords" content="Rwandan movies, Kinyarwanda films, Inyarwanda Films, watch online, stream movies, comedy, drama, music, African cinema, Rwanda entertainment">
-    <meta name="author" content="Inyarwanda Films">
+    <meta name="author" content="Rwanda Cinema">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="${baseUrl}/">
-    <meta property="og:title" content="Inyarwanda Films | Watch Rwandan Movies Online">
-    <meta property="og:description" content="Watch latest Rwandan movies, Kinyarwanda films, comedy videos and entertainment. Stream high-quality content online for free.">
+    <meta property="og:title" content="Rwanda Cinema| Watch Rwandan Movies and Musics Online">
+    <meta property="og:description" content="Watch latest Rwandan movies, Kinyarwanda films, comedy videos and Music Videos. Stream high-quality content online for free.">
     <meta property="og:image" content="${baseUrl}/og-image.jpg">
     <meta property="og:locale" content="rw_RW">
-    <meta property="og:site_name" content="Inyarwanda Films">
+    <meta property="og:site_name" content="Rwanda Cinema">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="${baseUrl}/">
-    <meta property="twitter:title" content="Inyarwanda Films | Watch Rwandan Movies Online">
-    <meta property="twitter:description" content="Watch latest Rwandan movies, Kinyarwanda films, comedy videos and entertainment.">
+    <meta property="twitter:title" content="Rwanda Cinema | Watch Rwandan Movies and Musics Online">
+    <meta property="twitter:description" content="Watch latest Rwandan movies, Kinyarwanda films, comedy videos and Rwandan musics for free.">
     
     <!-- Schema.org Structured Data -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "VideoGallery",
-        "name": "Inyarwanda Films - Rwandan Movies Online",
+        "name": "Rwanda Cinema - Rwandan Movies and Musics Online",
         "description": "Watch latest Rwandan movies, Kinyarwanda comedy series, drama films and music videos online for free",
         "url": "${baseUrl}",
         "publisher": {
             "@type": "Organization",
-            "name": "Inyarwanda Films",
+            "name": "Rwanda Cinema",
             "logo": {
                 "@type": "ImageObject",
                 "url": "${baseUrl}/logo.png"
@@ -752,8 +752,8 @@ function generateHomepageHTML(data) {
     <header class="header" role="banner">
         <div class="container">
             <div class="header-content">
-                <a href="${baseUrl}/" class="logo" aria-label="Inyarwanda Films Home">
-                    🎬 Inyarwanda Films
+                <a href="${baseUrl}/" class="logo" aria-label="Rwanda Cinema Home">
+                 🎬 Rwanda Cinema
                 </a>
                 
                 <div class="search-section">
@@ -820,8 +820,8 @@ function generateHomepageHTML(data) {
         ` : `
             <!-- Homepage Content -->
             <section class="hero">
-                <h1>Watch Rwandan Movies Online - Kinyarwanda Films & Comedy</h1>
-                <p>Stream latest <strong>Rwandan comedy series</strong> like Papa Sava, <strong>Kinyarwanda drama films</strong>, and <strong>African music videos</strong>. 100% free streaming of authentic Rwandan entertainment.</p>
+                <h1>Watch Rwandan Movies Online - Kinyarwanda Films, Comedies and Musics</h1>
+                <p>Stream latest <strong>Rwandan comedy series</strong>, <strong>Kinyarwanda drama films</strong>, and <strong>African music videos</strong>. 100% free streaming of authentic Rwandan entertainment.</p>
                 
                 <div class="cta-buttons">
                     ${allCategories.slice(0, 3).map(category => `
