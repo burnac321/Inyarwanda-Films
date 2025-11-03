@@ -862,8 +862,7 @@ function generateHomepageHTML(data) {
             ${Object.keys(latestByCategory).length === 0 ? `
                 <div class="no-results">
                     <h2>No videos found</h2>
-                    <p>Add markdown files to your content directory to display videos.</p>
-                </div>
+                         </div>
             ` : ''}
         `}
     </main>
@@ -881,7 +880,7 @@ function generateHomepageHTML(data) {
                 
                 <div class="footer-section">
                     <h3>Company</h3>
-                    <a href="${baseUrl}/about">About Inyarwanda Films</a>
+                    <a href="${baseUrl}/about">About Rwanda Cinema</a>
                     <a href="${baseUrl}/contact">Contact Us</a>
                     <a href="${baseUrl}/privacy">Privacy Policy</a>
                     <a href="${baseUrl}/terms">Terms of Service</a>
