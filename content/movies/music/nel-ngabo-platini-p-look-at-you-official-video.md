@@ -13,7 +13,7 @@ director: "Meddy Saleh "
 producer: "I.K. Clement"
 mainCast: "Nel Ngabo, Platini P, Mamba"
 supportingCast: ""
-metaDescription: "Nel Ngabo na Platini P - \"Look at You\" ni indirimbo y'urukundo ifite amashusho atangaje. Reba videwo y'iyi ndirimbo y'ubuhanga kandi wumve umudiho!..."
+metaDescription: "Nel Ngabo na Platini P - Look at You ni indirimbo y'urukundo ifite amashusho atangaje. Reba videwo y'iyi ndirimbo y'ubuhanga kandi wumve umudiho!..."
 tags: ["Nel NGabo","Platini P","Look at you","rwandan musics","new rwandan movies"]
 slug: "nel-ngabo-platini-p-look-at-you-official-video"
 date: "2025-11-03T12:36:17.024Z"
