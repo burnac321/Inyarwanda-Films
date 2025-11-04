@@ -193,8 +193,8 @@ function generateHomepageHTML(data) {
     
     <!-- Primary Meta Tags -->
     <title>${isSearchOrFilter ? 
-      `"${escapeHTML(searchQuery)}" ${categoryFilter ? `in ${capitalizeFirst(categoryFilter)}` : ''} - Inyarwanda Films` : 
-      'Inyarwanda Films | Watch Rwandan Movies & Kinyarwanda Films Online'}</title>
+      `"${escapeHTML(searchQuery)}" ${categoryFilter ? `in ${capitalizeFirst(categoryFilter)}` : ''} - Rwanda Cinema` : 
+      'Rwanda Cinema | Watch Rwandan Movies & Musics Online'}</title>
     <meta name="description" content="${isSearchOrFilter ? 
       `Search results for ${escapeHTML(searchQuery)} ${categoryFilter ? `in ${categoryFilter}` : 'Rwandan movies'}` : 
       'Watch latest Rwandan movies, Kinyarwanda comedy series like Papa Sava, drama films and Rwandan Music videos. Stream African cinema online free.'}">
