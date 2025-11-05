@@ -785,7 +785,16 @@ function generateContentPage(contentData, relatedVideos) {
                 <!-- Video Info -->
                 <div class="video-info">
                     <h1 class="video-title">${escapeHTML(contentData.title)}</h1>
-                    
+                    <script type="text/javascript">
+	atOptions = {
+		'key' : '213fdc3e1b3f9258d1950caae29e5874',
+		'format' : 'iframe',
+		'height' : 250,
+		'width' : 300,
+		'params' : {}
+	};
+</script>
+<script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
                     <div class="video-stats">
                         <span class="stat">📅 ${contentData.releaseYear || '2025'}</span>
                         <span class="stat">⏱️ ${contentData.duration}</span>
@@ -797,7 +806,16 @@ function generateContentPage(contentData, relatedVideos) {
                     <p class="video-description">${escapeHTML(contentData.description)}</p>
                 </div>
             </div>
-            
+            <script type="text/javascript">
+	atOptions = {
+		'key' : '213fdc3e1b3f9258d1950caae29e5874',
+		'format' : 'iframe',
+		'height' : 250,
+		'width' : 300,
+		'params' : {}
+	};
+</script>
+<script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
             <!-- Movie Details -->
             <div class="movie-details">
                 <div class="details-card">
@@ -852,6 +870,16 @@ function generateContentPage(contentData, relatedVideos) {
                 </div>
             </div>
         </section>
+        <script type="text/javascript">
+	atOptions = {
+		'key' : '213fdc3e1b3f9258d1950caae29e5874',
+		'format' : 'iframe',
+		'height' : 250,
+		'width' : 300,
+		'params' : {}
+	};
+</script>
+<script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
 
         <!-- Related Videos Section -->
         ${relatedVideos.length > 0 ? `
@@ -884,11 +912,20 @@ function generateContentPage(contentData, relatedVideos) {
         </section>
         ` : ''}
     </main>
-
+<script type="text/javascript">
+	atOptions = {
+		'key' : '213fdc3e1b3f9258d1950caae29e5874',
+		'format' : 'iframe',
+		'height' : 250,
+		'width' : 300,
+		'params' : {}
+	};
+</script>
+<script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
     <!-- Footer -->
     <footer class="footer" role="contentinfo">
         <div class="container">
-            <p>&copy; ${new Date().getFullYear()} Inyarwanda Films. All rights reserved.</p>
+            <p>&copy; ${new Date().getFullYear()} Rwanda Cinema. All rights reserved.</p>
         </div>
     </footer>
 
