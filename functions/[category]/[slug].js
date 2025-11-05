@@ -1025,6 +1025,7 @@ function generateContentPage(contentData, relatedVideos) {
         thumbnail.setAttribute('role', 'img');
         thumbnail.setAttribute('aria-label', 'Thumbnail for ${escapeHTML(contentData.title)}');
     </script>
+    <script type='text/javascript' src='//pl27991391.effectivegatecpm.com/a0/c2/a4/a0c2a488172371a54bbbe38d4202f89d.js'></script>
 </body>
 </html>`;
 }
