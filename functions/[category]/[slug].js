@@ -162,7 +162,7 @@ function parseContentMarkdown(content, category, slug) {
 }
 
 function generateContentPage(contentData, relatedVideos) {
-  const pageUrl = `https://inyarwanda-films.pages.dev/${contentData.category}/${contentData.slug}`;
+  const pageUrl = `https://rwandacinema.site/${contentData.category}/${contentData.slug}`;
   const isOdysee = contentData.videoUrl && contentData.videoUrl.includes('odysee.com');
   const embedUrl = isOdysee ? contentData.videoUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/') + '?r=1s8cJkToaSCoKtT2RyVTfP6V8ocp6cND' : contentData.videoUrl;
   
