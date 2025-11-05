@@ -383,6 +383,49 @@ function generateContentPage(contentData, relatedVideos) {
             height: calc(100% + 120px) !important;
         }
         
+        /* Ad Banner Styles */
+        .ad-banner {
+            margin: 2rem 0;
+            padding: 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .ad-banner:empty {
+            background: #2a2a2a;
+            color: var(--text-light);
+        }
+        
+        .ad-sidebar {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 300px;
+            z-index: 999;
+            display: none;
+        }
+        
+        .ad-mobile-sticky {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            z-index: 1000;
+            display: none;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px 8px 0 0;
+            padding: 10px;
+        }
+        
         /* Floating Next Button */
         .floating-next-btn {
             position: fixed;
@@ -670,6 +713,12 @@ function generateContentPage(contentData, relatedVideos) {
             text-align: center;
         }
         
+        @media (min-width: 1024px) {
+            .ad-sidebar {
+                display: block;
+            }
+        }
+        
         @media (max-width: 768px) {
             .video-title {
                 font-size: 1.8rem;
@@ -705,6 +754,10 @@ function generateContentPage(contentData, relatedVideos) {
             .next-btn-text {
                 font-size: 15px;
             }
+            
+            .ad-mobile-sticky {
+                display: block;
+            }
         }
         
         @media (max-width: 480px) {
@@ -738,6 +791,11 @@ function generateContentPage(contentData, relatedVideos) {
             
             .next-btn-icon {
                 font-size: 18px;
+            }
+            
+            .ad-banner {
+                margin: 1.5rem 0;
+                padding: 0.5rem;
             }
         }
     </style>
@@ -785,16 +843,7 @@ function generateContentPage(contentData, relatedVideos) {
                 <!-- Video Info -->
                 <div class="video-info">
                     <h1 class="video-title">${escapeHTML(contentData.title)}</h1>
-                    <script type="text/javascript">
-	atOptions = {
-		'key' : '213fdc3e1b3f9258d1950caae29e5874',
-		'format' : 'iframe',
-		'height' : 250,
-		'width' : 300,
-		'params' : {}
-	};
-</script>
-<script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
+                    
                     <div class="video-stats">
                         <span class="stat">📅 ${contentData.releaseYear || '2025'}</span>
                         <span class="stat">⏱️ ${contentData.duration}</span>
@@ -806,16 +855,21 @@ function generateContentPage(contentData, relatedVideos) {
                     <p class="video-description">${escapeHTML(contentData.description)}</p>
                 </div>
             </div>
-            <script type="text/javascript">
-	atOptions = {
-		'key' : '213fdc3e1b3f9258d1950caae29e5874',
-		'format' : 'iframe',
-		'height' : 250,
-		'width' : 300,
-		'params' : {}
-	};
-</script>
-<script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
+            
+            <!-- AD BANNER 1: Below Video Player -->
+            <div class="ad-banner ad-below-player">
+                <script type="text/javascript">
+                    atOptions = {
+                        'key' : '213fdc3e1b3f9258d1950caae29e5874',
+                        'format' : 'iframe',
+                        'height' : 250,
+                        'width' : 300,
+                        'params' : {}
+                    };
+                </script>
+                <script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
+            </div>
+            
             <!-- Movie Details -->
             <div class="movie-details">
                 <div class="details-card">
@@ -838,6 +892,20 @@ function generateContentPage(contentData, relatedVideos) {
                             <p>${contentData.rating || 'G'}</p>
                         </div>
                     </div>
+                </div>
+                
+                <!-- AD BANNER 2: Within Movie Details -->
+                <div class="ad-banner ad-in-details">
+                    <script type="text/javascript">
+                        atOptions = {
+                            'key' : '213fdc3e1b3f9258d1950caae29e5874',
+                            'format' : 'iframe',
+                            'height' : 250,
+                            'width' : 300,
+                            'params' : {}
+                        };
+                    </script>
+                    <script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
                 </div>
                 
                 <div class="details-card">
@@ -870,16 +938,20 @@ function generateContentPage(contentData, relatedVideos) {
                 </div>
             </div>
         </section>
-        <script type="text/javascript">
-	atOptions = {
-		'key' : '213fdc3e1b3f9258d1950caae29e5874',
-		'format' : 'iframe',
-		'height' : 250,
-		'width' : 300,
-		'params' : {}
-	};
-</script>
-<script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
+
+        <!-- AD BANNER 3: Above Related Videos -->
+        <div class="ad-banner ad-above-related">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : '213fdc3e1b3f9258d1950caae29e5874',
+                    'format' : 'iframe',
+                    'height' : 250,
+                    'width' : 300,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
+        </div>
 
         <!-- Related Videos Section -->
         ${relatedVideos.length > 0 ? `
@@ -912,22 +984,41 @@ function generateContentPage(contentData, relatedVideos) {
         </section>
         ` : ''}
     </main>
-<script type="text/javascript">
-	atOptions = {
-		'key' : '213fdc3e1b3f9258d1950caae29e5874',
-		'format' : 'iframe',
-		'height' : 250,
-		'width' : 300,
-		'params' : {}
-	};
-</script>
-<script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
+
     <!-- Footer -->
     <footer class="footer" role="contentinfo">
         <div class="container">
-            <p>&copy; ${new Date().getFullYear()} Rwanda Cinema. All rights reserved.</p>
+            <p>&copy; ${new Date().getFullYear()} Inyarwanda Films. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- AD BANNER 4: Sidebar (Desktop Only) -->
+    <div class="ad-sidebar">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '213fdc3e1b3f9258d1950caae29e5874',
+                'format' : 'iframe',
+                'height' : 250,
+                'width' : 300,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
+    </div>
+
+    <!-- AD BANNER 5: Mobile Sticky Bottom (Mobile Only) -->
+    <div class="ad-mobile-sticky">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '213fdc3e1b3f9258d1950caae29e5874',
+                'format' : 'iframe',
+                'height' : 250,
+                'width' : 300,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
+    </div>
 
     <!-- Floating Next Button -->
     ${relatedVideos.length > 0 ? `
@@ -1107,4 +1198,4 @@ function formatISODuration(duration) {
   }
   
   return 'PT28M'; // Default fallback
-      }
+		}
