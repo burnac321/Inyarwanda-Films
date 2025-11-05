@@ -188,7 +188,7 @@ function generateContentPage(contentData, relatedVideos) {
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="video.episode">
     <meta property="og:url" content="${pageUrl}">
-    <meta property="og:title" content="${escapeHTML(contentData.title)} | Watch Online - Inyarwanda Films">
+    <meta property="og:title" content="${escapeHTML(contentData.title)} | Watch Online - Rwanda Cinema">
     <meta property="og:description" content="${escapeHTML(contentData.metaDescription || contentData.description)}">
     <meta property="og:image" content="${contentData.posterUrl}">
     <meta property="og:image:width" content="1200">
@@ -228,11 +228,11 @@ function generateContentPage(contentData, relatedVideos) {
         "contentRating": "${contentData.rating || 'G'}",
         "author": {
             "@type": "Organization",
-            "name": "Inyarwanda Films"
+            "name": "Rwanda Cinema"
         },
         "publisher": {
             "@type": "Organization",
-            "name": "Inyarwanda Films",
+            "name": "Rwanda Cinema",
             "logo": {
                 "@type": "ImageObject",
                 "url": "https://rwandacinema.site/logo.png"
