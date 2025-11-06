@@ -317,7 +317,10 @@ function generateHomepageHTML(data) {
             align-items: center;
             gap: 0.5rem;
         }
-
+        .addbutton {
+        color: red;
+        font-weight: bold;
+        }
         .search-section {
             flex: 1;
             max-width: 500px;
@@ -755,7 +758,7 @@ function generateHomepageHTML(data) {
                 <a href="${baseUrl}/" class="logo" aria-label="Rwanda Cinema Home">
                  🎬 Rwanda Cinema
                 </a>
-                
+                <a href="/AddVideo.html" class="addbutton" arial-label="Upload Video">+📹</a>             
                 <div class="search-section">
                     <form class="search-form" action="${baseUrl}/" method="GET" role="search">
                         <input type="text" 
