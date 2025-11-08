@@ -201,7 +201,8 @@ function generateHomepageHTML(data) {
     <meta name="keywords" content="Rwandan movies, Kinyarwanda films, Inyarwanda Films, watch online, stream movies, comedy, drama, music, African cinema, Rwanda entertainment">
     <meta name="author" content="Rwanda Cinema">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-    
+   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7959421921456132"
+     crossorigin="anonymous"></script> 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="${baseUrl}/">
