@@ -184,7 +184,10 @@ function generateContentPage(contentData, relatedVideos) {
     <meta name="author" content="Rwanda Cinema">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7959421921456132"
+     crossorigin="anonymous"></script>
+     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="video.episode">
     <meta property="og:url" content="${pageUrl}">
