@@ -779,7 +779,7 @@ function generateHomepageHTML(data) {
                         <button type="submit" class="search-button">Search</button>
                     </form>
                 </div>
-                <button class="addbutton" aria-label="Add Video" onclick="location.href='/AddVideo.html'">+ VIDEO</button>
+                <button class="addbutton" aria-label="Add Video" onclick="location.href='/AddVideo.html'"> Upload Here</button>
 
                 <nav class="nav" role="navigation" aria-label="Main navigation">
                     <a href="${baseUrl}/" class="nav-link ${!categoryFilter ? 'active' : ''}">All Videos</a>
