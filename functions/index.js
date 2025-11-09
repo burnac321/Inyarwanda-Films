@@ -736,14 +736,14 @@ function generateHomepageHTML(data) {
             }
         }
 .addbutton {
-    padding: 10px 20px;
-    font-size: 24px;
-    color: white;
-    background-color: #4CAF50; /* green */
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+            background: var(--secondary);
+            color: var(--dark);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
 }
 
 .addbutton:hover {
