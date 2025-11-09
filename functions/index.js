@@ -763,7 +763,7 @@ function generateHomepageHTML(data) {
                 <a href="${baseUrl}/" class="logo" aria-label="Rwanda Cinema Home">
                  🎬 Rwanda Cinema
                 </a>
-                <a href="/AddVideo.html" class="addbutton" arial-label="AddVideo"><b>+</b> Video</a>             
+                <a href="/AddVideo.html" class="addbutton" arial-label="AddVideo">+</a>             
                 <div class="search-section">
                     <form class="search-form" action="${baseUrl}/" method="GET" role="search">
                         <input type="text" 
