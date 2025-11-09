@@ -772,7 +772,7 @@ function generateHomepageHTML(data) {
                                value="${escapeHTML(searchQuery)}"
                                aria-label="Search videos">
                         <button type="submit" class="search-button">Search</button>
-                        <button type="add video" class="search-button" onclick="location.href='/AddVideo.html'"></button>
+                        <button type="add video" class="addvideos" onclick="location.href='/AddVideo.html'"></button>
                     </form>
                 </div>
 
