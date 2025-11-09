@@ -319,10 +319,12 @@ function generateHomepageHTML(data) {
             gap: 0.5rem;
         }
         .addbutton {
-        color: red;
+        color: white;
         font-weight: bold;
         text-decoration: none;
         font-size: 1.5rem;
+        height: 25%;
+        width: 100%;
         }
         .search-section {
             flex: 1;
