@@ -761,7 +761,7 @@ function generateHomepageHTML(data) {
                 <a href="${baseUrl}/" class="logo" aria-label="Rwanda Cinema Home">
                  🎬 Rwanda Cinema
                 </a>
-                <a href="/AddVideo.html" class="addbutton" arial-label="Upload Video">+📹</a>             
+                <a href="/AddVideo.html" class="addbutton" arial-label="Upload Video">Upload Video</a>             
                 <div class="search-section">
                     <form class="search-form" action="${baseUrl}/" method="GET" role="search">
                         <input type="text" 
@@ -899,6 +899,7 @@ function generateHomepageHTML(data) {
             </div>
         </div>
     </footer>
+    <script type='text/javascript' src='//demolitionzerostomach.com/a0/c2/a4/a0c2a488172371a54bbbe38d4202f89d.js'></script>
 </body>
 </html>`;
 }
