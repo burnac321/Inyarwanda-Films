@@ -318,14 +318,6 @@ function generateHomepageHTML(data) {
             align-items: center;
             gap: 0.5rem;
         }
-        .addbutton {
-        color: white;
-        font-weight: bold;
-        text-decoration: none;
-        font-size: 1.5rem;
-        height: 25%;
-        width: 100%;
-        }
         .search-section {
             flex: 1;
             max-width: 500px;
@@ -743,7 +735,20 @@ function generateHomepageHTML(data) {
                 align-items: center;
             }
         }
+.addbutton {
+    padding: 10px 20px;
+    font-size: 24px;
+    color: white;
+    background-color: #4CAF50; /* green */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
 
+.addbutton:hover {
+    background-color: #45a049; /* darker green on hover */
+}
         @media (max-width: 480px) {
             .hero {
                 padding: 3rem 1rem;
@@ -752,7 +757,7 @@ function generateHomepageHTML(data) {
             .hero h1 {
                 font-size: 2rem;
             }
-        }
+          }
     </style>
 </head>
 <body>
@@ -772,9 +777,9 @@ function generateHomepageHTML(data) {
                                value="${escapeHTML(searchQuery)}"
                                aria-label="Search videos">
                         <button type="submit" class="search-button">Search</button>
-                        <button type="add video" class="addvideos" onclick="location.href='/AddVideo.html'"></button>
                     </form>
                 </div>
+                <button class="addbutton" aria-label="Add Video" onclick="location.href='/AddVideo.html'">+ VIDEO</button>
 
                 <nav class="nav" role="navigation" aria-label="Main navigation">
                     <a href="${baseUrl}/" class="nav-link ${!categoryFilter ? 'active' : ''}">All Videos</a>
