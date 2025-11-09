@@ -762,8 +762,7 @@ function generateHomepageHTML(data) {
             <div class="header-content">
                 <a href="${baseUrl}/" class="logo" aria-label="Rwanda Cinema Home">
                  🎬 Rwanda Cinema
-                </a>
-                <a href="/AddVideo.html" class="addbutton" arial-label="AddVideo">+</a>             
+                </a>             
                 <div class="search-section">
                     <form class="search-form" action="${baseUrl}/" method="GET" role="search">
                         <input type="text" 
@@ -773,6 +772,7 @@ function generateHomepageHTML(data) {
                                value="${escapeHTML(searchQuery)}"
                                aria-label="Search videos">
                         <button type="submit" class="search-button">Search</button>
+                        <button type="add video" class="search-button" onclick="location.href='/AddVideo.html'"></button>
                     </form>
                 </div>
 
