@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Previous CSS remains the same, adding new styles below */
-         :root {
+        :root {
             --primary: #008753;
             --secondary: #FAD201;
             --accent: #00A1DE;
@@ -338,6 +338,31 @@
             animation: spin 1s linear infinite;
         }
 
+        .character-counter {
+            font-size: 0.8rem;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .character-counter.warning {
+            color: #ff9800;
+        }
+
+        .character-counter.error {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .input-warning {
+            border-color: #ff9800 !important;
+            box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1) !important;
+        }
+
+        .input-error {
+            border-color: var(--danger) !important;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -361,8 +386,9 @@
                     <div class="form-group">
                         <label for="movieTitle" class="required">Movie Title</label>
                         <input type="text" id="movieTitle" class="form-control" required 
-                               placeholder="Enter movie title">
-                        <div class="form-help">This will be used for the page title and URL</div>
+                               placeholder="Enter movie title" maxlength="70">
+                        <div class="form-help">This will be used for the page title and URL (max 70 characters)</div>
+                        <div class="character-counter" id="titleCounter">0/70 characters</div>
                     </div>
 
                     <div class="form-group">
@@ -447,7 +473,7 @@
                     <label for="videoUrl" class="required">YouTube URL or Video File URL</label>
                     <input type="url" id="videoUrl" class="form-control" required 
                            placeholder="https://youtube.com/watch?v=... or https://example.com/video.mp4">
-                    <div class="form-help">Enter YouTube link or direct video file URL</div>
+                    <div class="form-help">Enter YouTube link or direct video file URL. YouTube links will be converted to embed format automatically.</div>
                     
                     <!-- YouTube Thumbnail Selection -->
                     <div class="thumbnail-container" id="thumbnailContainer">
@@ -558,6 +584,7 @@
         let categories = ['comedy', 'drama', 'action', 'music'];
         let selectedThumbnail = '';
         let youtubeVideoId = '';
+        let embedUrl = '';
 
         // DOM Elements
         const form = document.getElementById('movieUploadForm');
@@ -582,6 +609,29 @@
         const previewContent = document.getElementById('previewContent');
         const previewClose = document.getElementById('previewClose');
         const previewBtn = document.getElementById('previewBtn');
+        const titleCounter = document.getElementById('titleCounter');
+
+        // Character counter for title
+        movieTitleInput.addEventListener('input', function() {
+            const length = this.value.length;
+            const maxLength = 70;
+            
+            titleCounter.textContent = `${length}/${maxLength} characters`;
+            
+            // Update styling based on character count
+            if (length > maxLength - 10 && length <= maxLength) {
+                titleCounter.className = 'character-counter warning';
+                this.classList.add('input-warning');
+                this.classList.remove('input-error');
+            } else if (length > maxLength) {
+                titleCounter.className = 'character-counter error';
+                this.classList.add('input-error');
+                this.classList.remove('input-warning');
+            } else {
+                titleCounter.className = 'character-counter';
+                this.classList.remove('input-warning', 'input-error');
+            }
+        });
 
         // YouTube URL processing
         videoUrlInput.addEventListener('blur', function() {
@@ -594,6 +644,8 @@
                 // Hide YouTube-specific features for non-YouTube URLs
                 thumbnailContainer.style.display = 'none';
                 videoPreviewContainer.style.display = 'none';
+                // For non-YouTube URLs, use the original URL
+                embedUrl = url;
             }
         });
 
@@ -602,17 +654,47 @@
         }
 
         function extractYouTubeVideoId(url) {
-            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-            const match = url.match(regex);
-            return match ? match[1] : null;
+            // Handle various YouTube URL formats
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/,
+                /youtube\.com\/embed\/([^?]+)/,
+                /youtube\.com\/v\/([^?]+)/,
+                /youtube\.com\/watch\?.*v=([^&]+)/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) {
+                    return match[1].substring(0, 11); // YouTube IDs are always 11 characters
+                }
+            }
+            return null;
+        }
+
+        function convertToEmbedUrl(videoId) {
+            return `https://www.youtube.com/embed/${videoId}`;
+        }
+
+        function convertToEmbedUrlFromRegular(url) {
+            const videoId = extractYouTubeVideoId(url);
+            if (videoId) {
+                return convertToEmbedUrl(videoId);
+            }
+            return url; // Return original if conversion fails
         }
 
         async function processYouTubeUrl(url) {
             youtubeVideoId = extractYouTubeVideoId(url);
             if (!youtubeVideoId) {
-                showAlert('Invalid YouTube URL', 'error');
+                showAlert('Invalid YouTube URL. Please check the format.', 'error');
                 return;
             }
+
+            // Convert to embed URL
+            embedUrl = convertToEmbedUrl(youtubeVideoId);
+            
+            // Update the video URL field with embed URL for clarity
+            videoUrlInput.value = embedUrl;
 
             // Show loading
             thumbnailLoading.style.display = 'block';
@@ -625,7 +707,6 @@
                 displayThumbnails(thumbnails);
 
                 // Show video preview
-                const embedUrl = `https://www.youtube.com/embed/${youtubeVideoId}`;
                 videoPreviewEmbed.src = embedUrl;
                 videoPreviewContainer.style.display = 'block';
 
@@ -689,9 +770,17 @@
 
         previewClose.addEventListener('click', function() {
             previewModal.style.display = 'none';
+            videoPreviewEmbed.src = ''; // Stop video playback when closing
         });
 
         function showPreview() {
+            // Validate title length
+            if (movieTitleInput.value.length > 70) {
+                showAlert('Movie title must be 70 characters or less. Please shorten your title.', 'error');
+                movieTitleInput.focus();
+                return;
+            }
+
             // Collect form data
             const formData = {
                 title: document.getElementById('movieTitle').value || 'Movie Title',
@@ -706,10 +795,12 @@
 
             // Determine video source
             let videoSource = '';
-            if (youtubeVideoId) {
-                videoSource = `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${youtubeVideoId}" frameborder="0" allowfullscreen></iframe>`;
-            } else if (videoUrlInput.value) {
-                videoSource = `<video width="100%" controls><source src="${videoUrlInput.value}" type="video/mp4">Your browser does not support the video tag.</video>`;
+            if (embedUrl) {
+                if (isYouTubeUrl(embedUrl)) {
+                    videoSource = `<iframe width="100%" height="315" src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
+                } else {
+                    videoSource = `<video width="100%" controls><source src="${embedUrl}" type="video/mp4">Your browser does not support the video tag.</video>`;
+                }
             } else {
                 videoSource = '<p>No video source provided</p>';
             }
@@ -721,7 +812,8 @@
                     
                     <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 2rem;">
                         <div>
-                            ${selectedThumbnail ? `<img src="${selectedThumbnail}" alt="${formData.title}" style="width: 100%; border-radius: 8px;">` : ''}
+                            ${selectedThumbnail ? `<img src="${selectedThumbnail}" alt="${formData.title}" style="width: 100%; border-radius: 8px;">` : 
+                            '<div style="background: #f0f0f0; padding: 2rem; text-align: center; border-radius: 8px;">No poster image</div>'}
                         </div>
                         <div>
                             <p><strong>Duration:</strong> ${formData.duration}</p>
@@ -752,6 +844,17 @@
         previewModal.addEventListener('click', function(e) {
             if (e.target === previewModal) {
                 previewModal.style.display = 'none';
+                videoPreviewEmbed.src = ''; // Stop video playback when closing
+            }
+        });
+
+        // Form validation before submission
+        form.addEventListener('submit', function(e) {
+            if (movieTitleInput.value.length > 70) {
+                e.preventDefault();
+                showAlert('Movie title must be 70 characters or less. Please shorten your title.', 'error');
+                movieTitleInput.focus();
+                return false;
             }
         });
 
@@ -856,6 +959,13 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            // Validate title length before submission
+            if (movieTitleInput.value.length > 70) {
+                showAlert('Movie title must be 70 characters or less. Please shorten your title.', 'error');
+                movieTitleInput.focus();
+                return;
+            }
+            
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
@@ -871,7 +981,7 @@
                     rating: document.getElementById('rating').value,
                     quality: document.getElementById('quality').value,
                     description: document.getElementById('description').value,
-                    videoUrl: document.getElementById('videoUrl').value,
+                    videoUrl: embedUrl || document.getElementById('videoUrl').value, // Use embed URL if available
                     posterUrl: document.getElementById('posterUrl').value,
                     director: document.getElementById('director').value,
                     producer: document.getElementById('producer').value,
@@ -894,9 +1004,12 @@
                     selectedTags = [];
                     selectedThumbnail = '';
                     youtubeVideoId = '';
+                    embedUrl = '';
                     updateTagsDisplay();
                     thumbnailContainer.style.display = 'none';
                     videoPreviewContainer.style.display = 'none';
+                    titleCounter.textContent = '0/70 characters';
+                    titleCounter.className = 'character-counter';
                     selectCategory('comedy');
                 } else {
                     throw new Error(response.message || 'Upload failed');
