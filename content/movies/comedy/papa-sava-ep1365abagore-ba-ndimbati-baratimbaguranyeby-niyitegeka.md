@@ -1,7 +1,7 @@
 ---
 title: "PAPA SAVA EP1365:ABAGORE BA NDIMBATI BARATIMBAGURANYE!BY NIYITEGEKA"
 releaseYear: 2025
-duration: "2o minutes"
+duration: "20 minutes"
 language: "Kinyarwanda"
 category: "comedy"
 rating: "G"
@@ -26,7 +26,7 @@ PAPA SAVA EP1365:ABAGORE BA NDIMBATI BARATIMBAGURANYE!BY NIYITEGEKA Gratien(Rwan
 ## Movie Details
 
 - **Release Year**: 2025
-- **Duration**: 2o minutes
+- **Duration**: 20 minutes
 - **Language**: Kinyarwanda
 - **Category**: comedy
 - **Content Rating**: G
