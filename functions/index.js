@@ -870,9 +870,19 @@ function generateHomepageHTML(data) {
         </div>
     </header>
 
-    <!-- AD 1: Header Banner -->
-    ${generateAdsterraAd('213fdc3e1b3f9258d1950caae29e5874', 90, 728, 'ad-leaderboard')}
-
+   <!-- Simple test ad - put this at the top of your page -->
+<div style="width: 300px; height: 250px; background: #ccc; margin: 20px auto;">
+    <script type="text/javascript">
+        atOptions = {
+            'key' : '213fdc3e1b3f9258d1950caae29e5874',
+            'format' : 'iframe',
+            'height' : 250,
+            'width' : 300,
+            'params' : {}
+        };
+    </script>
+    <script type="text/javascript" src="https://demolitionzerostomach.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js"></script>
+</div>
     <!-- Main Content -->
     <main class="container" role="main">
         <!-- Breadcrumb -->
