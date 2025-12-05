@@ -15,7 +15,7 @@ mainCast: "PAPA SAVA"
 supportingCast: ""
 metaDescription: "PAPA SAVA EP1355: GUFUHA NJYE NANAPFA BURYA!” ni filime y’urwenya ya Niyitegeka Gratien igaruka ku bugufi, urukundo n’ingaruka zo gufuha mu buzima bwa buri m..."
 tags: ["PAPA SAVA","INYARWANDA FILMS","PAPA SAVA COMEDY","RWANDAN MOVIES"]
-slug: "papa-sava-ep1355gufuha-njye-nanapfa-buryaby-niyitegeka-gratienrwandan-comedy"
+slug: "papa-sava-ep1355gufuha-njye-nanapfa-burya"
 date: "2025-10-23T14:16:32.196Z"
 ---
 
