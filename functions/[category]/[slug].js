@@ -1303,7 +1303,7 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
                     \`).join('');
                     searchResults.innerHTML = html;
                 } else {
-                    searchResults.innerHTML = '<div class="no-results">No movies found</div>';
+                    searchResults.innerHTML = '<div class="no-results">No videos found</div>';
                 }
             } catch (error) {
                 if (error.name === 'AbortError') {
