@@ -1,5 +1,5 @@
 ---
-title: "PAPA SAVA EP1362:NGO AFITE ABAGENI BA MACYE!By NIYITEGEKA Gratien( Rwandan Comedy)"
+title: "PAPA SAVA EP1362:NGO AFITE ABAGENI BA MACYE!"
 releaseYear: 2025
 duration: "22 minutes"
 language: "Kinyarwanda"
@@ -15,7 +15,7 @@ mainCast: "NIYITEGEKA Gratien"
 supportingCast: ""
 metaDescription: "PAPA SAVA EP1362:NGO AFITE ABAGENI BA MACYE!By NIYITEGEKA Gratien( Rwandan Comedy)..."
 tags: ["papa sava","niyitegeka gratien","inyarwanda films"]
-slug: "papa-sava-ep1362ngo-afite-abageni-ba-macyeby-niyitegeka-gratien"
+slug: "papa-sava-ep1362ngo-afite-abageni-ba-macye"
 date: "2025-11-03T12:04:58.841Z"
 ---
 
