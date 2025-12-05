@@ -336,8 +336,7 @@ window.__h82AlnkH6D91__("WyJwdWItNzk1OTQyMTkyMTQ1NjEzMiIsW251bGwsbnVsbCxudWxsLCJ
         .header {
             background: var(--primary);
             padding: 1rem 0;
-            position: sticky;
-            top: 0;
+            position: relative;
             z-index: 1000;
             border-bottom: 3px solid var(--secondary);
         }
