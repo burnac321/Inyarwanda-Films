@@ -1,5 +1,5 @@
 ---
-title: "PAPA SAVA EP1355:GUFUHA NJYE NANAPFA BURYA!BY NIYITEGEKA Gratien(Rwandan Comedy)"
+title: "PAPA SAVA EP1355:GUFUHA NJYE NANAPFA BURYA!"
 releaseYear: 2025
 duration: "20 minutes"
 language: "Kinyarwanda"
