@@ -1044,7 +1044,7 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
     <header class="header" role="banner">
         <div class="container">
             <div class="header-content">
-                <a href="/" class="logo" aria-label="Inyarwanda Films Home">
+                <a href="/" class="logo" aria-label="Rwanda Cinema Home">
                     🎬 Rwanda Cinema
                 </a>
                 
@@ -1053,7 +1053,7 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
                         <input type="text" 
                                class="search-input" 
                                id="searchInput" 
-                               placeholder="Search for movies..." 
+                               placeholder="Search for videos..." 
                                autocomplete="off"
                                aria-label="Search movies">
                         <button type="submit" class="search-button" aria-label="Search">
