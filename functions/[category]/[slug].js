@@ -1,3 +1,4 @@
+// functions/[category]/[slug].js
 export async function onRequest(context) {
   const { request, params, env } = context;
   const { category, slug } = params;
@@ -1277,7 +1278,7 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
             searchResults.classList.add('active');
             
             try {
-                // Call your own API endpoint for search
+                // Call the API search endpoint
                 const searchUrl = \`/api/search?q=\${encodeURIComponent(query)}\`;
                 
                 const response = await fetch(searchUrl, {
@@ -1288,12 +1289,12 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Search failed');
+                    throw new Error(\`Search failed: \${response.status}\`);
                 }
                 
                 const results = await response.json();
                 
-                if (results.length > 0) {
+                if (results && results.length > 0) {
                     const html = results.map(result => \`
                         <a href="/\${result.category}/\${result.slug}" class="search-result-item">
                             <div class="search-result-title">\${escapeText(result.title)}</div>
@@ -1310,61 +1311,6 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
                 }
                 console.error('Search error:', error);
                 searchResults.innerHTML = '<div class="no-results">Error searching. Please try again.</div>';
-            }
-        }
-
-        // Simple client-side search from available videos on page
-        async function performSimpleSearch(query) {
-            if (!query.trim() || query.length < 2) {
-                searchResults.classList.remove('active');
-                return;
-            }
-            
-            searchResults.innerHTML = '<div class="search-loading">Searching...</div>';
-            searchResults.classList.add('active');
-            
-            try {
-                // Get all videos from current page sections
-                const allVideos = [];
-                
-                // Add current video
-                allVideos.push({
-                    title: "${escapeHTML(contentData.title)}",
-                    category: "${contentData.category}",
-                    slug: "${contentData.slug}"
-                });
-                
-                // Add related videos
-                const relatedVideos = ${JSON.stringify(relatedVideos)};
-                allVideos.push(...relatedVideos);
-                
-                // Add latest videos
-                const latestVideos = ${JSON.stringify(latestVideos)};
-                allVideos.push(...latestVideos);
-                
-                const searchTerm = query.toLowerCase().trim();
-                
-                // Filter videos based on search term
-                const results = allVideos.filter(video => 
-                    video.title.toLowerCase().includes(searchTerm) ||
-                    video.category.toLowerCase().includes(searchTerm) ||
-                    (video.description && video.description.toLowerCase().includes(searchTerm))
-                ).slice(0, 10); // Limit to 10 results
-                
-                if (results.length > 0) {
-                    const html = results.map(video => \`
-                        <a href="/\${video.category}/\${video.slug}" class="search-result-item">
-                            <div class="search-result-title">\${escapeText(video.title)}</div>
-                            <div class="search-result-category">\${capitalizeFirst(video.category)}</div>
-                        </a>
-                    \`).join('');
-                    searchResults.innerHTML = html;
-                } else {
-                    searchResults.innerHTML = '<div class="no-results">No movies found. Try a different search term.</div>';
-                }
-            } catch (error) {
-                console.error('Search error:', error);
-                searchResults.innerHTML = '<div class="no-results">Error searching movies</div>';
             }
         }
 
@@ -1391,8 +1337,7 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
             
             if (query.length >= 2) {
                 searchTimeout = setTimeout(() => {
-                    // Try API search first, fall back to simple search
-                    performSimpleSearch(query);
+                    performSearch(query);
                 }, 300);
             } else {
                 searchResults.classList.remove('active');
@@ -1403,7 +1348,7 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
             e.preventDefault();
             const query = searchInput.value;
             if (query.length >= 2) {
-                performSimpleSearch(query);
+                performSearch(query);
             }
         });
 
