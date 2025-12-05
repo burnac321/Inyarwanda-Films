@@ -274,7 +274,49 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
     fullDescription;
   const showReadMore = fullDescription.length > 250;
   
-  return `<!DOCTYPE html>
+  // Generate video cards HTML safely
+  const generateVideoCards = (videos, sectionTitle, sectionId) => {
+    if (videos.length === 0) return '';
+    
+    const cards = videos.map(video => {
+      const title = escapeHTML(video.title);
+      const category = video.category;
+      const slug = video.slug;
+      const posterUrl = video.posterUrl || 'https://inyarwanda-films.pages.dev/images/default-poster.jpg';
+      const releaseYear = video.releaseYear || '';
+      const duration = video.duration || '';
+      
+      return `<a href="/${category}/${slug}" class="related-card">
+                <div class="related-thumbnail">
+                  <img src="${posterUrl}" 
+                       alt="${title}" 
+                       onerror="this.src='https://inyarwanda-films.pages.dev/images/default-poster.jpg'">
+                  <div class="related-overlay">
+                    <div class="related-play">▶</div>
+                  </div>
+                </div>
+                <div class="related-info">
+                  <h3 class="related-title">${title}</h3>
+                  <div class="related-meta">
+                    ${releaseYear ? `<span>${releaseYear}</span>` : ''}
+                    ${duration ? `<span>${duration}</span>` : ''}
+                  </div>
+                </div>
+              </a>`;
+    }).join('');
+    
+    return `<section class="related-section" id="${sectionId}">
+              <div class="section-header">
+                <h2 class="section-title">${sectionTitle}</h2>
+                <a href="/?category=${contentData.category}" class="view-all">View All ${capitalizeFirst(contentData.category)}</a>
+              </div>
+              <div class="related-grid">
+                ${cards}
+              </div>
+            </section>`;
+  };
+  
+  const html = `<!DOCTYPE html>
 <html lang="rw">
 <head>
     <meta charset="UTF-8">
@@ -503,6 +545,12 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
             padding: 1rem;
             text-align: center;
             color: var(--text-light);
+        }
+        
+        .search-loading {
+            padding: 1rem;
+            text-align: center;
+            color: var(--secondary);
         }
         
         .breadcrumb {
@@ -1064,11 +1112,7 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
                     <div class="video-description ${showReadMore ? 'truncated' : 'full'}" id="videoDescription">
                         ${escapeHTML(fullDescription)}
                     </div>
-                    ${showReadMore ? `
-                    <button class="read-more-btn" id="readMoreBtn" onclick="toggleDescription()">
-                        Read More
-                    </button>
-                    ` : ''}
+                    ${showReadMore ? '<button class="read-more-btn" id="readMoreBtn" onclick="toggleDescription()">Read More</button>' : ''}
                 </div>
             </div>
             
@@ -1099,95 +1143,31 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
                 <div class="details-card">
                     <h2>Cast & Crew</h2>
                     <div class="cast-crew">
-                        ${contentData.director ? `
-                        <div class="cast-item">
+                        ${contentData.director ? `<div class="cast-item">
                             <strong>Director</strong>
                             <p>${escapeHTML(contentData.director)}</p>
-                        </div>
-                        ` : ''}
-                        ${contentData.producer ? `
-                        <div class="cast-item">
+                        </div>` : ''}
+                        ${contentData.producer ? `<div class="cast-item">
                             <strong>Producer</strong>
                             <p>${escapeHTML(contentData.producer)}</p>
-                        </div>
-                        ` : ''}
-                        ${contentData.mainCast ? `
-                        <div class="cast-item" style="grid-column: 1 / -1;">
+                        </div>` : ''}
+                        ${contentData.mainCast ? `<div class="cast-item" style="grid-column: 1 / -1;">
                             <strong>Main Cast</strong>
                             <p>${escapeHTML(contentData.mainCast)}</p>
-                        </div>
-                        ` : ''}
-                        ${!contentData.director && !contentData.producer && !contentData.mainCast ? `
-                        <div class="cast-item" style="grid-column: 1 / -1;">
+                        </div>` : ''}
+                        ${!contentData.director && !contentData.producer && !contentData.mainCast ? `<div class="cast-item" style="grid-column: 1 / -1;">
                             <p>Cast information not available</p>
-                        </div>
-                        ` : ''}
+                        </div>` : ''}
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- Latest Videos Section (10 random latest from same category) -->
-        ${latestVideos.length > 0 ? `
-        <section class="related-section" id="latestVideos">
-            <div class="section-header">
-                <h2 class="section-title">Latest ${capitalizeFirst(contentData.category)} Videos</h2>
-                <a href="/?category=${contentData.category}" class="view-all">View All ${capitalizeFirst(contentData.category)}</a>
-            </div>
-            <div class="related-grid">
-                ${latestVideos.map(video => `
-                <a href="/${video.category}/${video.slug}" class="related-card">
-                    <div class="related-thumbnail">
-                        <img src="${video.posterUrl || 'https://inyarwanda-films.pages.dev/images/default-poster.jpg'}" 
-                             alt="${escapeHTML(video.title)}" 
-                             onerror="this.src='https://inyarwanda-films.pages.dev/images/default-poster.jpg'">
-                        <div class="related-overlay">
-                            <div class="related-play">▶</div>
-                        </div>
-                    </div>
-                    <div class="related-info">
-                        <h3 class="related-title">${escapeHTML(video.title)}</h3>
-                        <div class="related-meta">
-                            ${video.releaseYear ? `<span>${video.releaseYear}</span>` : ''}
-                            ${video.duration ? `<span>${video.duration}</span>` : ''}
-                        </div>
-                    </div>
-                </a>
-                `).join('')}
-            </div>
-        </section>
-        ` : ''}
+        ${generateVideoCards(latestVideos, `Latest ${capitalizeFirst(contentData.category)} Videos`, 'latestVideos')}
 
         <!-- Related Videos Section (2 specific recommendations) -->
-        ${relatedVideos.length > 0 ? `
-        <section class="related-section" id="relatedVideos">
-            <div class="section-header">
-                <h2 class="section-title">Recommended ${capitalizeFirst(contentData.category)} Videos</h2>
-                <a href="/?category=${contentData.category}" class="view-all">View All ${capitalizeFirst(contentData.category)}</a>
-            </div>
-            <div class="related-grid">
-                ${relatedVideos.map(video => `
-                <a href="/${video.category}/${video.slug}" class="related-card">
-                    <div class="related-thumbnail">
-                        <img src="${video.posterUrl || 'https://inyarwanda-films.pages.dev/images/default-poster.jpg'}" 
-                             alt="${escapeHTML(video.title)}" 
-                             onerror="this.src='https://inyarwanda-films.pages.dev/images/default-poster.jpg'">
-                        <div class="related-overlay">
-                            <div class="related-play">▶</div>
-                        </div>
-                    </div>
-                    <div class="related-info">
-                        <h3 class="related-title">${escapeHTML(video.title)}</h3>
-                        <div class="related-meta">
-                            ${video.releaseYear ? `<span>${video.releaseYear}</span>` : ''}
-                            ${video.duration ? `<span>${video.duration}</span>` : ''}
-                        </div>
-                    </div>
-                </a>
-                `).join('')}
-            </div>
-        </section>
-        ` : ''}
+        ${generateVideoCards(relatedVideos, `Recommended ${capitalizeFirst(contentData.category)} Videos`, 'relatedVideos')}
     </main>
 
     <!-- Footer -->
@@ -1198,12 +1178,10 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
     </footer>
 
     <!-- Floating Next Button -->
-    ${latestVideos.length > 0 ? `
-    <a href="#latestVideos" class="floating-next-btn" id="floatingNextBtn">
+    ${latestVideos.length > 0 ? `<a href="#latestVideos" class="floating-next-btn" id="floatingNextBtn">
         <span class="next-btn-icon">⏭️</span>
         <span class="next-btn-text">Watch More ${capitalizeFirst(contentData.category)} Videos</span>
-    </a>
-    ` : ''}
+    </a>` : ''}
 
     <script>
         // Video player functionality
@@ -1276,67 +1254,134 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
         const searchForm = document.getElementById('searchForm');
         const searchInput = document.getElementById('searchInput');
         const searchResults = document.getElementById('searchResults');
+        const searchContainer = document.querySelector('.search-container');
         
         let searchTimeout;
-        let allMoviesCache = null;
-        let isSearching = false;
+        let searchAbortController = null;
 
-        // Fetch all movies for search (cached)
-        async function getAllMovies() {
-            if (allMoviesCache) return allMoviesCache;
-            
-            try {
-                const response = await fetch('/api/search-index.json');
-                if (response.ok) {
-                    allMoviesCache = await response.json();
-                    return allMoviesCache;
-                }
-            } catch (error) {
-                console.error('Error fetching search index:', error);
-            }
-            
-            return [];
-        }
-
-        // Perform search
+        // Fetch all movies from GitHub API for search
         async function performSearch(query) {
-            if (!query.trim() || isSearching) {
+            if (!query.trim() || query.length < 2) {
                 searchResults.classList.remove('active');
                 return;
             }
             
-            isSearching = true;
-            searchResults.innerHTML = '<div class="no-results">Searching...</div>';
+            // Cancel previous search if still running
+            if (searchAbortController) {
+                searchAbortController.abort();
+            }
+            
+            searchAbortController = new AbortController();
+            
+            searchResults.innerHTML = '<div class="search-loading">Searching...</div>';
             searchResults.classList.add('active');
             
             try {
-                const movies = await getAllMovies();
+                // Call your own API endpoint for search
+                const searchUrl = \`/api/search?q=\${encodeURIComponent(query)}\`;
+                
+                const response = await fetch(searchUrl, {
+                    signal: searchAbortController.signal,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Search failed');
+                }
+                
+                const results = await response.json();
+                
+                if (results.length > 0) {
+                    const html = results.map(result => \`
+                        <a href="/\${result.category}/\${result.slug}" class="search-result-item">
+                            <div class="search-result-title">\${escapeText(result.title)}</div>
+                            <div class="search-result-category">\${capitalizeFirst(result.category)}</div>
+                        </a>
+                    \`).join('');
+                    searchResults.innerHTML = html;
+                } else {
+                    searchResults.innerHTML = '<div class="no-results">No movies found</div>';
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    return; // Search was cancelled
+                }
+                console.error('Search error:', error);
+                searchResults.innerHTML = '<div class="no-results">Error searching. Please try again.</div>';
+            }
+        }
+
+        // Simple client-side search from available videos on page
+        async function performSimpleSearch(query) {
+            if (!query.trim() || query.length < 2) {
+                searchResults.classList.remove('active');
+                return;
+            }
+            
+            searchResults.innerHTML = '<div class="search-loading">Searching...</div>';
+            searchResults.classList.add('active');
+            
+            try {
+                // Get all videos from current page sections
+                const allVideos = [];
+                
+                // Add current video
+                allVideos.push({
+                    title: "${escapeHTML(contentData.title)}",
+                    category: "${contentData.category}",
+                    slug: "${contentData.slug}"
+                });
+                
+                // Add related videos
+                const relatedVideos = ${JSON.stringify(relatedVideos)};
+                allVideos.push(...relatedVideos);
+                
+                // Add latest videos
+                const latestVideos = ${JSON.stringify(latestVideos)};
+                allVideos.push(...latestVideos);
+                
                 const searchTerm = query.toLowerCase().trim();
                 
-                // Filter movies based on search term
-                const results = movies.filter(movie => 
-                    movie.title.toLowerCase().includes(searchTerm) ||
-                    movie.category.toLowerCase().includes(searchTerm) ||
-                    (movie.description && movie.description.toLowerCase().includes(searchTerm)) ||
-                    (movie.tags && movie.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+                // Filter videos based on search term
+                const results = allVideos.filter(video => 
+                    video.title.toLowerCase().includes(searchTerm) ||
+                    video.category.toLowerCase().includes(searchTerm) ||
+                    (video.description && video.description.toLowerCase().includes(searchTerm))
                 ).slice(0, 10); // Limit to 10 results
                 
                 if (results.length > 0) {
-                    searchResults.innerHTML = results.map(movie => `
-                        <a href="/${movie.category}/${movie.slug}" class="search-result-item">
-                            <div class="search-result-title">${escapeHTML(movie.title)}</div>
-                            <div class="search-result-category">${capitalizeFirst(movie.category)}</div>
+                    const html = results.map(video => \`
+                        <a href="/\${video.category}/\${video.slug}" class="search-result-item">
+                            <div class="search-result-title">\${escapeText(video.title)}</div>
+                            <div class="search-result-category">\${capitalizeFirst(video.category)}</div>
                         </a>
-                    `).join('');
+                    \`).join('');
+                    searchResults.innerHTML = html;
                 } else {
-                    searchResults.innerHTML = '<div class="no-results">No movies found</div>';
+                    searchResults.innerHTML = '<div class="no-results">No movies found. Try a different search term.</div>';
                 }
             } catch (error) {
                 console.error('Search error:', error);
                 searchResults.innerHTML = '<div class="no-results">Error searching movies</div>';
             }
-            
-            isSearching = false;
+        }
+
+        // Helper function for escaping text in JavaScript
+        function escapeText(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, 
+                tag => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;',
+                    '"': '&quot;', "'": '&#39;'
+                }[tag]));
+        }
+
+        // Helper function for capitalizing first letter in JavaScript
+        function capitalizeFirst(str) {
+            if (!str) return '';
+            return str.charAt(0).toUpperCase() + str.slice(1);
         }
 
         // Event Listeners for search
@@ -1346,7 +1391,8 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
             
             if (query.length >= 2) {
                 searchTimeout = setTimeout(() => {
-                    performSearch(query);
+                    // Try API search first, fall back to simple search
+                    performSimpleSearch(query);
                 }, 300);
             } else {
                 searchResults.classList.remove('active');
@@ -1355,13 +1401,24 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
 
         searchForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            performSearch(searchInput.value);
+            const query = searchInput.value;
+            if (query.length >= 2) {
+                performSimpleSearch(query);
+            }
         });
 
         // Close search results when clicking outside
         document.addEventListener('click', (e) => {
             if (!searchContainer.contains(e.target)) {
                 searchResults.classList.remove('active');
+            }
+        });
+
+        // Close search results with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                searchResults.classList.remove('active');
+                searchInput.blur();
             }
         });
 
@@ -1438,24 +1495,12 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
         // Set thumbnail alt text for accessibility
         thumbnail.setAttribute('role', 'img');
         thumbnail.setAttribute('aria-label', 'Thumbnail for ${escapeHTML(contentData.title)}');
-        
-        // Utility functions
-        function escapeHTML(str) {
-            if (!str) return '';
-            return str.replace(/[&<>"']/g, 
-                tag => ({
-                    '&': '&amp;', '<': '&lt;', '>': '&gt;',
-                    '"': '&quot;', "'": '&#39;'
-                }[tag]));
-        }
-        
-        function capitalizeFirst(str) {
-            return str.charAt(0).toUpperCase() + str.slice(1);
-        }
     </script>
     <script type='text/javascript' src='//pl27991391.effectivegatecpm.com/a0/c2/a4/a0c2a488172371a54bbbe38d4202f89d.js'></script>
 </body>
 </html>`;
+
+  return html;
 }
 
 function escapeHTML(str) {
@@ -1468,6 +1513,7 @@ function escapeHTML(str) {
 }
 
 function capitalizeFirst(str) {
+  if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
@@ -1477,7 +1523,7 @@ function generateKeywords(contentData) {
     'watch online', 'stream movies', contentData.category,
     contentData.language || 'Kinyarwanda', 'African cinema'
   ];
-  if (contentData.tags && contentData.tags.length > 0) {
+  if (contentData.tags && Array.isArray(contentData.tags)) {
     base.push(...contentData.tags);
   }
   return base.join(', ');
