@@ -48,7 +48,10 @@ export async function onRequest(context) {
     // Get other videos from the same category for related content
     const relatedVideos = await getRelatedVideos(env, category, slug);
     
-    const html = generateContentPage(contentData, relatedVideos);
+    // Get 10 random latest videos from the same category
+    const latestVideos = await getLatestVideos(env, category, slug, 10);
+    
+    const html = generateContentPage(contentData, relatedVideos, latestVideos);
     
     return new Response(html, {
       headers: {
@@ -65,6 +68,98 @@ export async function onRequest(context) {
         'Cache-Control': 'public, max-age=300'
       }
     });
+  }
+}
+
+async function getLatestVideos(env, currentCategory, currentSlug, limit = 10) {
+  try {
+    const GITHUB_TOKEN = env.GITHUB_TOKEN;
+    const GITHUB_USERNAME = "burnac321";
+    const GITHUB_REPO = "Inyarwanda-Films";
+    
+    const categoryUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/content/movies/${currentCategory}`;
+    
+    const response = await fetch(categoryUrl, {
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'User-Agent': 'Inyarwanda-Films',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (!response.ok) return [];
+
+    const files = await response.json();
+    const allVideos = [];
+
+    // Get all videos from the category
+    for (const file of files) {
+      if (file.name.endsWith('.md') && file.type === 'file') {
+        const slug = file.name.replace('.md', '');
+        
+        // Skip the current video
+        if (slug === currentSlug) continue;
+        
+        // Get basic file content to extract title and date
+        const fileResponse = await fetch(file.url, {
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'User-Agent': 'Inyarwanda-Films',
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        
+        if (fileResponse.ok) {
+          const fileData = await fileResponse.json();
+          const content = atob(fileData.content);
+          const videoData = parseContentMarkdown(content, currentCategory, slug);
+          
+          if (videoData && videoData.title) {
+            // Add date for sorting (default to current date if not available)
+            videoData.sortDate = videoData.date ? new Date(videoData.date) : new Date(fileData.created_at);
+            videoData.slug = slug;
+            videoData.category = currentCategory;
+            allVideos.push(videoData);
+          }
+        }
+      }
+    }
+    
+    // Sort by date (newest first) and get random selection
+    allVideos.sort((a, b) => b.sortDate - a.sortDate);
+    
+    // Get latest 10 videos
+    const latestVideos = allVideos.slice(0, 20); // Get more than needed for random selection
+    
+    // Randomly select videos from the latest ones
+    const randomVideos = [];
+    const availableIndices = Array.from({length: Math.min(latestVideos.length, limit)}, (_, i) => i);
+    
+    // Shuffle and pick
+    for (let i = 0; i < Math.min(limit, availableIndices.length); i++) {
+      const randomIndex = Math.floor(Math.random() * availableIndices.length);
+      const videoIndex = availableIndices.splice(randomIndex, 1)[0];
+      const video = latestVideos[videoIndex];
+      
+      // Clean up object for template
+      const cleanVideo = {
+        title: video.title,
+        slug: video.slug,
+        category: video.category,
+        posterUrl: video.posterUrl,
+        duration: video.duration,
+        releaseYear: video.releaseYear,
+        videoUrl: video.videoUrl,
+        description: video.description
+      };
+      
+      randomVideos.push(cleanVideo);
+    }
+    
+    return randomVideos;
+  } catch (error) {
+    console.error('Error fetching latest videos:', error);
+    return [];
   }
 }
 
@@ -119,7 +214,8 @@ async function getRelatedVideos(env, currentCategory, currentSlug) {
               posterUrl: videoData.posterUrl,
               duration: videoData.duration,
               releaseYear: videoData.releaseYear,
-              videoUrl: videoData.videoUrl
+              videoUrl: videoData.videoUrl,
+              description: videoData.description
             });
           }
         }
@@ -161,7 +257,7 @@ function parseContentMarkdown(content, category, slug) {
   return data;
 }
 
-function generateContentPage(contentData, relatedVideos) {
+function generateContentPage(contentData, relatedVideos, latestVideos) {
   const pageUrl = `https://rwandacinema.site/${contentData.category}/${contentData.slug}`;
   const isOdysee = contentData.videoUrl && contentData.videoUrl.includes('odysee.com');
   const embedUrl = isOdysee ? contentData.videoUrl.replace('https://odysee.com/', 'https://odysee.com/$/embed/') + '?r=1s8cJkToaSCoKtT2RyVTfP6V8ocp6cND' : contentData.videoUrl;
@@ -171,6 +267,13 @@ function generateContentPage(contentData, relatedVideos) {
   // Format upload date for Schema.org (ISO 8601)
   const uploadDate = contentData.date ? new Date(contentData.date).toISOString() : new Date().toISOString();
   
+  // Truncate description for preview (250 characters)
+  const fullDescription = contentData.description || '';
+  const truncatedDescription = fullDescription.length > 250 ? 
+    fullDescription.substring(0, 250) + '...' : 
+    fullDescription;
+  const showReadMore = fullDescription.length > 250;
+  
   return `<!DOCTYPE html>
 <html lang="rw">
 <head>
@@ -179,7 +282,7 @@ function generateContentPage(contentData, relatedVideos) {
     
     <!-- Primary Meta Tags -->
     <title>${escapeHTML(contentData.title)} | Watch Online - Rwanda Cinema</title>
-    <meta name="description" content="${escapeHTML(contentData.metaDescription || contentData.description)}">
+    <meta name="description" content="${escapeHTML(contentData.metaDescription || contentData.description || 'Watch this Kinyarwanda film online')}">
     <meta name="keywords" content="${generateKeywords(contentData)}">
     <meta name="author" content="Rwanda Cinema">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -192,7 +295,7 @@ function generateContentPage(contentData, relatedVideos) {
     <meta property="og:type" content="video.episode">
     <meta property="og:url" content="${pageUrl}">
     <meta property="og:title" content="${escapeHTML(contentData.title)} | Watch Online - Rwanda Cinema">
-    <meta property="og:description" content="${escapeHTML(contentData.metaDescription || contentData.description)}">
+    <meta property="og:description" content="${escapeHTML(contentData.metaDescription || contentData.description || 'Watch this Kinyarwanda film online')}">
     <meta property="og:image" content="${contentData.posterUrl}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -205,7 +308,7 @@ function generateContentPage(contentData, relatedVideos) {
     <meta property="twitter:card" content="player">
     <meta property="twitter:url" content="${pageUrl}">
     <meta property="twitter:title" content="${escapeHTML(contentData.title)} | Watch Online - Rwanda Cinema">
-    <meta property="twitter:description" content="${escapeHTML(contentData.metaDescription || contentData.description)}">
+    <meta property="twitter:description" content="${escapeHTML(contentData.metaDescription || contentData.description || 'Watch this Kinyarwanda film online')}">
     <meta property="twitter:image" content="${contentData.posterUrl}">
     <meta property="twitter:player" content="${pageUrl}">
     <meta property="twitter:player:width" content="1280">
@@ -220,7 +323,7 @@ function generateContentPage(contentData, relatedVideos) {
         "@context": "https://schema.org",
         "@type": "VideoObject",
         "name": "${escapeHTML(contentData.title)}",
-        "description": "${escapeHTML(contentData.metaDescription || contentData.description)}",
+        "description": "${escapeHTML(contentData.metaDescription || contentData.description || 'Watch this Kinyarwanda film online')}",
         "thumbnailUrl": "${contentData.posterUrl}",
         "uploadDate": "${uploadDate}",
         "duration": "${isoDuration || 'PT28M'}",
@@ -285,6 +388,13 @@ function generateContentPage(contentData, relatedVideos) {
             z-index: 1000;
         }
         
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+        
         .logo {
             color: white;
             text-decoration: none;
@@ -293,6 +403,106 @@ function generateContentPage(contentData, relatedVideos) {
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            white-space: nowrap;
+        }
+        
+        .search-container {
+            flex: 1;
+            max-width: 500px;
+            position: relative;
+        }
+        
+        .search-form {
+            display: flex;
+            width: 100%;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px 0 0 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(250, 210, 1, 0.3);
+        }
+        
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .search-button {
+            background: var(--secondary);
+            color: var(--dark);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .search-button:hover {
+            background: #e0c001;
+        }
+        
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1001;
+        }
+        
+        .search-results.active {
+            display: block;
+        }
+        
+        .search-result-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: block;
+            text-decoration: none;
+            color: white;
+            transition: background 0.3s ease;
+        }
+        
+        .search-result-item:hover {
+            background: rgba(0, 135, 83, 0.2);
+        }
+        
+        .search-result-title {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+            color: var(--secondary);
+        }
+        
+        .search-result-category {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+        
+        .no-results {
+            padding: 1rem;
+            text-align: center;
+            color: var(--text-light);
         }
         
         .breadcrumb {
@@ -466,6 +676,32 @@ function generateContentPage(contentData, relatedVideos) {
             color: var(--text-light);
             line-height: 1.7;
             font-size: 1.1rem;
+            position: relative;
+        }
+        
+        .video-description.truncated {
+            max-height: 120px;
+            overflow: hidden;
+        }
+        
+        .video-description.full {
+            max-height: none;
+        }
+        
+        .read-more-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .read-more-btn:hover {
+            background: #006641;
         }
         
         .movie-details {
@@ -674,6 +910,15 @@ function generateContentPage(contentData, relatedVideos) {
         }
         
         @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .search-container {
+                max-width: 100%;
+            }
+            
             .video-title {
                 font-size: 1.8rem;
             }
@@ -746,12 +991,31 @@ function generateContentPage(contentData, relatedVideos) {
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Header with Search -->
     <header class="header" role="banner">
         <div class="container">
-            <a href="/" class="logo" aria-label="Inyarwanda Films Home">
-                🎬 Rwanda Cinema
-            </a>
+            <div class="header-content">
+                <a href="/" class="logo" aria-label="Inyarwanda Films Home">
+                    🎬 Rwanda Cinema
+                </a>
+                
+                <div class="search-container">
+                    <form class="search-form" id="searchForm">
+                        <input type="text" 
+                               class="search-input" 
+                               id="searchInput" 
+                               placeholder="Search for movies..." 
+                               autocomplete="off"
+                               aria-label="Search movies">
+                        <button type="submit" class="search-button" aria-label="Search">
+                            🔍 Search
+                        </button>
+                    </form>
+                    <div class="search-results" id="searchResults" role="listbox">
+                        <!-- Search results will be populated here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -797,7 +1061,14 @@ function generateContentPage(contentData, relatedVideos) {
                         <span class="stat">⭐ ${contentData.rating || 'G'}</span>
                     </div>
                     
-                    <p class="video-description">${escapeHTML(contentData.description)}</p>
+                    <div class="video-description ${showReadMore ? 'truncated' : 'full'}" id="videoDescription">
+                        ${escapeHTML(fullDescription)}
+                    </div>
+                    ${showReadMore ? `
+                    <button class="read-more-btn" id="readMoreBtn" onclick="toggleDescription()">
+                        Read More
+                    </button>
+                    ` : ''}
                 </div>
             </div>
             
@@ -856,11 +1127,42 @@ function generateContentPage(contentData, relatedVideos) {
             </div>
         </section>
 
-        <!-- Related Videos Section -->
+        <!-- Latest Videos Section (10 random latest from same category) -->
+        ${latestVideos.length > 0 ? `
+        <section class="related-section" id="latestVideos">
+            <div class="section-header">
+                <h2 class="section-title">Latest ${capitalizeFirst(contentData.category)} Videos</h2>
+                <a href="/?category=${contentData.category}" class="view-all">View All ${capitalizeFirst(contentData.category)}</a>
+            </div>
+            <div class="related-grid">
+                ${latestVideos.map(video => `
+                <a href="/${video.category}/${video.slug}" class="related-card">
+                    <div class="related-thumbnail">
+                        <img src="${video.posterUrl || 'https://inyarwanda-films.pages.dev/images/default-poster.jpg'}" 
+                             alt="${escapeHTML(video.title)}" 
+                             onerror="this.src='https://inyarwanda-films.pages.dev/images/default-poster.jpg'">
+                        <div class="related-overlay">
+                            <div class="related-play">▶</div>
+                        </div>
+                    </div>
+                    <div class="related-info">
+                        <h3 class="related-title">${escapeHTML(video.title)}</h3>
+                        <div class="related-meta">
+                            ${video.releaseYear ? `<span>${video.releaseYear}</span>` : ''}
+                            ${video.duration ? `<span>${video.duration}</span>` : ''}
+                        </div>
+                    </div>
+                </a>
+                `).join('')}
+            </div>
+        </section>
+        ` : ''}
+
+        <!-- Related Videos Section (2 specific recommendations) -->
         ${relatedVideos.length > 0 ? `
         <section class="related-section" id="relatedVideos">
             <div class="section-header">
-                <h2 class="section-title">More ${capitalizeFirst(contentData.category)} Videos</h2>
+                <h2 class="section-title">Recommended ${capitalizeFirst(contentData.category)} Videos</h2>
                 <a href="/?category=${contentData.category}" class="view-all">View All ${capitalizeFirst(contentData.category)}</a>
             </div>
             <div class="related-grid">
@@ -896,8 +1198,8 @@ function generateContentPage(contentData, relatedVideos) {
     </footer>
 
     <!-- Floating Next Button -->
-    ${relatedVideos.length > 0 ? `
-    <a href="#relatedVideos" class="floating-next-btn" id="floatingNextBtn">
+    ${latestVideos.length > 0 ? `
+    <a href="#latestVideos" class="floating-next-btn" id="floatingNextBtn">
         <span class="next-btn-icon">⏭️</span>
         <span class="next-btn-text">Watch More ${capitalizeFirst(contentData.category)} Videos</span>
     </a>
@@ -954,7 +1256,116 @@ function generateContentPage(contentData, relatedVideos) {
             }
         };
 
-        // Event Listeners
+        // Description toggle functionality
+        function toggleDescription() {
+            const description = document.getElementById('videoDescription');
+            const readMoreBtn = document.getElementById('readMoreBtn');
+            
+            if (description.classList.contains('truncated')) {
+                description.classList.remove('truncated');
+                description.classList.add('full');
+                readMoreBtn.textContent = 'Read Less';
+            } else {
+                description.classList.remove('full');
+                description.classList.add('truncated');
+                readMoreBtn.textContent = 'Read More';
+            }
+        }
+
+        // Search functionality
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        
+        let searchTimeout;
+        let allMoviesCache = null;
+        let isSearching = false;
+
+        // Fetch all movies for search (cached)
+        async function getAllMovies() {
+            if (allMoviesCache) return allMoviesCache;
+            
+            try {
+                const response = await fetch('/api/search-index.json');
+                if (response.ok) {
+                    allMoviesCache = await response.json();
+                    return allMoviesCache;
+                }
+            } catch (error) {
+                console.error('Error fetching search index:', error);
+            }
+            
+            return [];
+        }
+
+        // Perform search
+        async function performSearch(query) {
+            if (!query.trim() || isSearching) {
+                searchResults.classList.remove('active');
+                return;
+            }
+            
+            isSearching = true;
+            searchResults.innerHTML = '<div class="no-results">Searching...</div>';
+            searchResults.classList.add('active');
+            
+            try {
+                const movies = await getAllMovies();
+                const searchTerm = query.toLowerCase().trim();
+                
+                // Filter movies based on search term
+                const results = movies.filter(movie => 
+                    movie.title.toLowerCase().includes(searchTerm) ||
+                    movie.category.toLowerCase().includes(searchTerm) ||
+                    (movie.description && movie.description.toLowerCase().includes(searchTerm)) ||
+                    (movie.tags && movie.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+                ).slice(0, 10); // Limit to 10 results
+                
+                if (results.length > 0) {
+                    searchResults.innerHTML = results.map(movie => `
+                        <a href="/${movie.category}/${movie.slug}" class="search-result-item">
+                            <div class="search-result-title">${escapeHTML(movie.title)}</div>
+                            <div class="search-result-category">${capitalizeFirst(movie.category)}</div>
+                        </a>
+                    `).join('');
+                } else {
+                    searchResults.innerHTML = '<div class="no-results">No movies found</div>';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                searchResults.innerHTML = '<div class="no-results">Error searching movies</div>';
+            }
+            
+            isSearching = false;
+        }
+
+        // Event Listeners for search
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const query = e.target.value;
+            
+            if (query.length >= 2) {
+                searchTimeout = setTimeout(() => {
+                    performSearch(query);
+                }, 300);
+            } else {
+                searchResults.classList.remove('active');
+            }
+        });
+
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            performSearch(searchInput.value);
+        });
+
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchContainer.contains(e.target)) {
+                searchResults.classList.remove('active');
+            }
+        });
+
+        // Event Listeners for video
         thumbnail.addEventListener('click', startVideo);
         playButton.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1012,9 +1423,9 @@ function generateContentPage(contentData, relatedVideos) {
         if (floatingNextBtn) {
             floatingNextBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const relatedSection = document.getElementById('relatedVideos');
-                if (relatedSection) {
-                    relatedSection.scrollIntoView({ 
+                const latestSection = document.getElementById('latestVideos');
+                if (latestSection) {
+                    latestSection.scrollIntoView({ 
                         behavior: 'smooth',
                         block: 'start'
                     });
@@ -1027,6 +1438,20 @@ function generateContentPage(contentData, relatedVideos) {
         // Set thumbnail alt text for accessibility
         thumbnail.setAttribute('role', 'img');
         thumbnail.setAttribute('aria-label', 'Thumbnail for ${escapeHTML(contentData.title)}');
+        
+        // Utility functions
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, 
+                tag => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;',
+                    '"': '&quot;', "'": '&#39;'
+                }[tag]));
+        }
+        
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
     </script>
     <script type='text/javascript' src='//pl27991391.effectivegatecpm.com/a0/c2/a4/a0c2a488172371a54bbbe38d4202f89d.js'></script>
 </body>
@@ -1074,4 +1499,4 @@ function formatISODuration(duration) {
   }
   
   return 'PT28M'; // Default fallback
-      }
+}
