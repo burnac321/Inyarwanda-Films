@@ -15,7 +15,7 @@ mainCast: "NIYITEGEKA Gratien"
 supportingCast: ""
 metaDescription: "PAPA SAVA EP1365:ABAGORE BA NDIMBATI BARATIMBAGURANYE!"
 tags: ["Rwanda films","papa sava","inyarwanda films","ndimbati"]
-slug: "papa-sava-ep1365abagore-ba-ndimbati-baratimbaguranyeby-niyitegeka"
+slug: "papa-sava-ep1365abagore-ba-ndimbati-baratimbaguranye"
 date: "2025-11-10T21:22:50.445Z"
 ---
 
