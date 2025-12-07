@@ -167,6 +167,14 @@
             background: #5a6268;
         }
 
+        .btn-youtube {
+            background: #FF0000;
+        }
+
+        .btn-youtube:hover {
+            background: #CC0000;
+        }
+
         .form-actions {
             display: flex;
             gap: 1rem;
@@ -235,6 +243,7 @@
             overflow: hidden;
             margin-top: 10px;
         }
+
         .thumbnail-container {
             display: none;
             margin-top: 15px;
@@ -363,9 +372,133 @@
             box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
         }
 
+        .youtube-import-section {
+            background: linear-gradient(135deg, #FF000015 0%, #28282815 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #FF0000;
+            margin-bottom: 20px;
+        }
+
+        .youtube-import-section h3 {
+            color: #FF0000;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .youtube-import-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .youtube-import-controls .form-control {
+            flex: 1;
+        }
+
+        .imported-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            margin-top: 15px;
+        }
+
+        .imported-info h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .info-item {
+            font-size: 0.9rem;
+        }
+
+        .info-item strong {
+            color: #495057;
+        }
+
+        .seo-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .seo-preview h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .search-result-preview {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            border: 1px solid #dfe1e5;
+            border-radius: 8px;
+            padding: 15px;
+            background: white;
+        }
+
+        .search-result-title {
+            color: #1a0dab;
+            font-size: 18px;
+            line-height: 1.3;
+            margin-bottom: 5px;
+            text-decoration: none;
+            cursor: default;
+        }
+
+        .search-result-title:hover {
+            text-decoration: underline;
+        }
+
+        .search-result-url {
+            color: #006621;
+            font-size: 14px;
+            line-height: 1.3;
+            margin-bottom: 5px;
+        }
+
+        .search-result-description {
+            color: #545454;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .thumbnail-auto-select {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--success);
+            font-weight: 500;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .youtube-import-controls {
+                flex-direction: column;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -379,6 +512,38 @@
         <div id="alertMessage" class="alert" style="display: none;"></div>
 
         <form id="movieUploadForm">
+            <!-- YouTube Import Section -->
+            <div class="form-section">
+                <div class="youtube-import-section">
+                    <h3><i class="fab fa-youtube"></i> Import from YouTube</h3>
+                    <div class="youtube-import-controls">
+                        <input type="url" id="youtubeUrl" class="form-control" 
+                               placeholder="Paste YouTube video URL (e.g., https://youtube.com/watch?v=...)">
+                        <button type="button" id="importYoutubeBtn" class="btn btn-youtube">
+                            <i class="fab fa-youtube"></i> Import Data
+                        </button>
+                    </div>
+                    <div class="form-help">
+                        Import video title, description, thumbnail, and channel info automatically
+                    </div>
+                    
+                    <div class="imported-info" id="importedInfo" style="display: none;">
+                        <h4>Imported Data</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <strong>Channel:</strong> <span id="importedChannel">Not found</span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Video ID:</strong> <span id="importedVideoId">Not found</span>
+                            </div>
+                            <div class="info-item">
+                                <strong>Auto-selected thumbnail:</strong> <span id="importedThumbnail">Not selected</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Basic Information Section -->
             <div class="form-section">
                 <h2 class="section-title">Basic Information</h2>
@@ -387,8 +552,16 @@
                         <label for="movieTitle" class="required">Movie Title</label>
                         <input type="text" id="movieTitle" class="form-control" required 
                                placeholder="Enter movie title" maxlength="70">
-                        <div class="form-help">This will be used for the page title and URL (max 70 characters)</div>
+                        <div class="form-help">SEO Tip: Include keywords like "Rwanda", "Kinyarwanda" in title (max 70 characters)</div>
                         <div class="character-counter" id="titleCounter">0/70 characters</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="metaTitle" class="required">Meta Title (SEO)</label>
+                        <input type="text" id="metaTitle" class="form-control" required 
+                               placeholder="Title for search engines" maxlength="60">
+                        <div class="form-help">Appears in Google search results (max 60 characters)</div>
+                        <div class="character-counter" id="metaTitleCounter">0/60 characters</div>
                     </div>
 
                     <div class="form-group">
@@ -404,14 +577,33 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="channelName" class="required">Channel/Studio Name</label>
+                        <input type="text" id="channelName" class="form-control" required 
+                               placeholder="YouTube channel or production studio">
+                        <div class="form-help">Will be used for attribution and SEO</div>
+                    </div>
+
+                    <div class="form-group">
                         <label for="language" class="required">Primary Language</label>
                         <select id="language" class="form-control" required>
                             <option value="">Select language</option>
-                            <option value="Kinyarwanda">Kinyarwanda</option>
+                            <option value="Kinyarwanda" selected>Kinyarwanda</option>
                             <option value="English">English</option>
                             <option value="French">French</option>
                             <option value="Swahili">Swahili</option>
                         </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEO Preview Section -->
+            <div class="form-section">
+                <div class="seo-preview">
+                    <h4><i class="fas fa-search"></i> Google Search Preview</h4>
+                    <div class="search-result-preview">
+                        <div class="search-result-title" id="seoPreviewTitle">Your Page Title Here</div>
+                        <div class="search-result-url" id="seoPreviewUrl">https://rwandacinema.site/movies/...</div>
+                        <div class="search-result-description" id="seoPreviewDescription">This is how your page will appear in Google search results. The description should be compelling and include relevant keywords.</div>
                     </div>
                 </div>
             </div>
@@ -442,7 +634,7 @@
                         <select id="rating" class="form-control">
                             <option value="G">G - General Audience</option>
                             <option value="PG">PG - Parental Guidance</option>
-                            <option value="PG-13">PG-13 - Teens and Above</option>
+                            <option value="PG-13" selected>PG-13 - Teens and Above</option>
                             <option value="R">R - Restricted</option>
                         </select>
                     </div>
@@ -466,22 +658,33 @@
                     <label for="description" class="required">Movie Description</label>
                     <textarea id="description" class="form-control" required 
                               placeholder="Provide a detailed description of the movie plot, themes, and significance..."></textarea>
-                    <div class="form-help">This description will be used for SEO meta description</div>
+                    <div class="form-help">This description will be used for SEO. Include keywords naturally.</div>
                 </div>
 
                 <div class="form-group full-width">
-                    <label for="videoUrl" class="required">YouTube URL or Video File URL</label>
+                    <label for="metaDescription" class="required">Meta Description (SEO)</label>
+                    <textarea id="metaDescription" class="form-control" required 
+                              placeholder="Brief summary for search engines (max 160 characters)" maxlength="160"></textarea>
+                    <div class="form-help">This appears under your title in Google search results</div>
+                    <div class="character-counter" id="metaDescCounter">0/160 characters</div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="videoUrl" class="required">Video URL</label>
                     <input type="url" id="videoUrl" class="form-control" required 
-                           placeholder="https://youtube.com/watch?v=... or https://example.com/video.mp4">
-                    <div class="form-help">Enter YouTube link or direct video file URL. YouTube links will be converted to embed format automatically.</div>
+                           placeholder="Will be auto-filled from YouTube import">
+                    <div class="form-help">YouTube embed URL will be generated automatically</div>
                     
                     <!-- YouTube Thumbnail Selection -->
                     <div class="thumbnail-container" id="thumbnailContainer">
-                        <label>Select Thumbnail:</label>
+                        <label>Select Thumbnail (Auto-selected highest quality):</label>
                         <div class="loading" id="thumbnailLoading">
                             <i class="fas fa-spinner"></i> Loading thumbnails...
                         </div>
                         <div class="thumbnail-options" id="thumbnailOptions"></div>
+                        <div class="thumbnail-auto-select" id="thumbnailAutoSelect">
+                            <i class="fas fa-check-circle"></i> Highest quality thumbnail auto-selected
+                        </div>
                     </div>
 
                     <!-- Video Preview -->
@@ -495,7 +698,7 @@
                 <div class="form-group full-width">
                     <label for="posterUrl" class="required">Poster Image URL</label>
                     <input type="url" id="posterUrl" class="form-control" required 
-                           placeholder="https://example.com/path/to/movie-poster.jpg">
+                           placeholder="Will be auto-filled with highest quality thumbnail">
                     <div class="form-help">URL to the movie poster image (recommended: 800x1200px)</div>
                 </div>
             </div>
@@ -533,11 +736,20 @@
             <!-- SEO & Metadata Section -->
             <div class="form-section">
                 <h2 class="section-title">SEO & Metadata</h2>
-                <div class="form-group full-width">
-                    <label for="metaDescription">Meta Description</label>
-                    <textarea id="metaDescription" class="form-control" 
-                              placeholder="Optional: Custom meta description for SEO (auto-generated if empty)"></textarea>
-                    <div class="form-help">Keep it under 160 characters for optimal SEO</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="keywords">Primary Keywords</label>
+                        <input type="text" id="keywords" class="form-control" 
+                               placeholder="Rwanda, Kinyarwanda, African cinema">
+                        <div class="form-help">Comma separated keywords for SEO</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="focusKeyword">Focus Keyword</label>
+                        <input type="text" id="focusKeyword" class="form-control" 
+                               placeholder="e.g., Rwandan comedy">
+                        <div class="form-help">Main keyword you want to rank for</div>
+                    </div>
                 </div>
 
                 <div class="form-group full-width">
@@ -545,7 +757,7 @@
                     <input type="text" id="tagsInput" class="form-control" 
                            placeholder="Add tags separated by commas (e.g., Rwanda, Kigali, family drama)">
                     <div class="tags-container" id="tagsContainer"></div>
-                    <div class="form-help">Tags improve searchability and SEO</div>
+                    <div class="form-help">Tags improve searchability and SEO. Auto-adds channel name and category.</div>
                 </div>
 
                 <div class="form-group">
@@ -585,6 +797,7 @@
         let selectedThumbnail = '';
         let youtubeVideoId = '';
         let embedUrl = '';
+        let currentVideoData = null;
 
         // DOM Elements
         const form = document.getElementById('movieUploadForm');
@@ -598,11 +811,13 @@
         const tagsInput = document.getElementById('tagsInput');
         const tagsContainer = document.getElementById('tagsContainer');
         const movieTitleInput = document.getElementById('movieTitle');
+        const metaTitleInput = document.getElementById('metaTitle');
         const slugInput = document.getElementById('slug');
         const videoUrlInput = document.getElementById('videoUrl');
         const thumbnailContainer = document.getElementById('thumbnailContainer');
         const thumbnailOptions = document.getElementById('thumbnailOptions');
         const thumbnailLoading = document.getElementById('thumbnailLoading');
+        const thumbnailAutoSelect = document.getElementById('thumbnailAutoSelect');
         const videoPreviewContainer = document.getElementById('videoPreviewContainer');
         const videoPreviewEmbed = document.getElementById('videoPreviewEmbed');
         const previewModal = document.getElementById('previewModal');
@@ -610,51 +825,143 @@
         const previewClose = document.getElementById('previewClose');
         const previewBtn = document.getElementById('previewBtn');
         const titleCounter = document.getElementById('titleCounter');
+        const metaTitleCounter = document.getElementById('metaTitleCounter');
+        const metaDescCounter = document.getElementById('metaDescCounter');
+        const metaDescriptionInput = document.getElementById('metaDescription');
+        const descriptionInput = document.getElementById('description');
+        const youtubeUrlInput = document.getElementById('youtubeUrl');
+        const importYoutubeBtn = document.getElementById('importYoutubeBtn');
+        const importedInfo = document.getElementById('importedInfo');
+        const importedChannel = document.getElementById('importedChannel');
+        const importedVideoId = document.getElementById('importedVideoId');
+        const importedThumbnail = document.getElementById('importedThumbnail');
+        const channelNameInput = document.getElementById('channelName');
+        const posterUrlInput = document.getElementById('posterUrl');
+        const seoPreviewTitle = document.getElementById('seoPreviewTitle');
+        const seoPreviewUrl = document.getElementById('seoPreviewUrl');
+        const seoPreviewDescription = document.getElementById('seoPreviewDescription');
+        const keywordsInput = document.getElementById('keywords');
+        const focusKeywordInput = document.getElementById('focusKeyword');
 
-        // Character counter for title
-        movieTitleInput.addEventListener('input', function() {
-            const length = this.value.length;
-            const maxLength = 70;
+        // Character counters
+        function setupCharacterCounter(inputElement, counterElement, maxLength) {
+            inputElement.addEventListener('input', function() {
+                const length = this.value.length;
+                counterElement.textContent = `${length}/${maxLength} characters`;
+                
+                if (length > maxLength * 0.9 && length <= maxLength) {
+                    counterElement.className = 'character-counter warning';
+                    this.classList.add('input-warning');
+                    this.classList.remove('input-error');
+                } else if (length > maxLength) {
+                    counterElement.className = 'character-counter error';
+                    this.classList.add('input-error');
+                    this.classList.remove('input-warning');
+                } else {
+                    counterElement.className = 'character-counter';
+                    this.classList.remove('input-warning', 'input-error');
+                }
+                
+                updateSEOPreview();
+            });
+        }
+
+        // Setup character counters
+        setupCharacterCounter(movieTitleInput, titleCounter, 70);
+        setupCharacterCounter(metaTitleInput, metaTitleCounter, 60);
+        setupCharacterCounter(metaDescriptionInput, metaDescCounter, 160);
+
+        // Update SEO preview
+        function updateSEOPreview() {
+            const title = metaTitleInput.value || movieTitleInput.value;
+            const description = metaDescriptionInput.value || descriptionInput.value.substring(0, 160);
+            const slug = slugInput.value || generateSlug(movieTitleInput.value);
             
-            titleCounter.textContent = `${length}/${maxLength} characters`;
+            seoPreviewTitle.textContent = title || 'Your Page Title Here';
+            seoPreviewDescription.textContent = description || 'This is how your page will appear in Google search results. The description should be compelling and include relevant keywords.';
             
-            // Update styling based on character count
-            if (length > maxLength - 10 && length <= maxLength) {
-                titleCounter.className = 'character-counter warning';
-                this.classList.add('input-warning');
-                this.classList.remove('input-error');
-            } else if (length > maxLength) {
-                titleCounter.className = 'character-counter error';
-                this.classList.add('input-error');
-                this.classList.remove('input-warning');
-            } else {
-                titleCounter.className = 'character-counter';
-                this.classList.remove('input-warning', 'input-error');
+            if (slug) {
+                seoPreviewUrl.textContent = `https://rwandacinema.site/${selectedCategoryInput.value || 'movies'}/${slug}`;
+            }
+        }
+
+        // YouTube Import Functionality
+        importYoutubeBtn.addEventListener('click', async function() {
+            const youtubeUrl = youtubeUrlInput.value.trim();
+            if (!youtubeUrl) {
+                showAlert('Please enter a YouTube URL', 'error');
+                return;
+            }
+
+            const importBtn = this;
+            importBtn.disabled = true;
+            importBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...';
+
+            try {
+                const videoData = await fetchYouTubeData(youtubeUrl);
+                currentVideoData = videoData;
+                populateFormWithYouTubeData(videoData);
+                importedInfo.style.display = 'block';
+                showAlert('YouTube data imported successfully! Please review and complete remaining fields.', 'success');
+            } catch (error) {
+                console.error('Import error:', error);
+                showAlert('Failed to import from YouTube: ' + error.message, 'error');
+            } finally {
+                importBtn.disabled = false;
+                importBtn.innerHTML = '<i class="fab fa-youtube"></i> Import Data';
             }
         });
 
-        // YouTube URL processing
-        videoUrlInput.addEventListener('blur', function() {
-            const url = this.value.trim();
-            if (!url) return;
+        async function fetchYouTubeData(youtubeUrl) {
+            const videoId = extractYouTubeVideoId(youtubeUrl);
+            if (!videoId) throw new Error('Invalid YouTube URL');
 
-            if (isYouTubeUrl(url)) {
-                processYouTubeUrl(url);
-            } else {
-                // Hide YouTube-specific features for non-YouTube URLs
-                thumbnailContainer.style.display = 'none';
-                videoPreviewContainer.style.display = 'none';
-                // For non-YouTube URLs, use the original URL
-                embedUrl = url;
+            try {
+                // Try to get data via oEmbed (no API key needed)
+                const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(youtubeUrl)}&format=json`;
+                const response = await fetch(oembedUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch YouTube data');
+                }
+                
+                const data = await response.json();
+                
+                // Get video description from the page meta (alternative method)
+                let description = '';
+                try {
+                    const pageResponse = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(youtubeUrl)}`);
+                    const pageData = await pageResponse.json();
+                    description = pageData.description || '';
+                } catch (e) {
+                    console.log('Could not fetch description:', e);
+                }
+                
+                return {
+                    title: data.title,
+                    description: description,
+                    thumbnail: data.thumbnail_url,
+                    author: data.author_name,
+                    videoId: videoId,
+                    videoUrl: youtubeUrl,
+                    embedUrl: `https://www.youtube.com/embed/${videoId}`
+                };
+            } catch (error) {
+                // Fallback: Use basic data extraction
+                console.log('Using fallback method:', error);
+                return {
+                    title: extractTitleFromUrl(youtubeUrl),
+                    description: '',
+                    thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+                    author: 'YouTube Channel',
+                    videoId: videoId,
+                    videoUrl: youtubeUrl,
+                    embedUrl: `https://www.youtube.com/embed/${videoId}`
+                };
             }
-        });
-
-        function isYouTubeUrl(url) {
-            return url.includes('youtube.com') || url.includes('youtu.be');
         }
 
         function extractYouTubeVideoId(url) {
-            // Handle various YouTube URL formats
             const patterns = [
                 /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/,
                 /youtube\.com\/embed\/([^?]+)/,
@@ -665,200 +972,185 @@
             for (const pattern of patterns) {
                 const match = url.match(pattern);
                 if (match && match[1]) {
-                    return match[1].substring(0, 11); // YouTube IDs are always 11 characters
+                    return match[1].substring(0, 11);
                 }
             }
             return null;
         }
 
-        function convertToEmbedUrl(videoId) {
-            return `https://www.youtube.com/embed/${videoId}`;
-        }
-
-        function convertToEmbedUrlFromRegular(url) {
+        function extractTitleFromUrl(url) {
+            // Extract a readable title from URL
             const videoId = extractYouTubeVideoId(url);
-            if (videoId) {
-                return convertToEmbedUrl(videoId);
-            }
-            return url; // Return original if conversion fails
+            return videoId ? `YouTube Video ${videoId}` : 'Imported Video';
         }
 
-        async function processYouTubeUrl(url) {
-            youtubeVideoId = extractYouTubeVideoId(url);
-            if (!youtubeVideoId) {
-                showAlert('Invalid YouTube URL. Please check the format.', 'error');
-                return;
-            }
-
-            // Convert to embed URL
-            embedUrl = convertToEmbedUrl(youtubeVideoId);
+        function populateFormWithYouTubeData(videoData) {
+            // Auto-fill form fields
+            movieTitleInput.value = videoData.title;
+            metaTitleInput.value = videoData.title;
+            channelNameInput.value = videoData.author;
+            descriptionInput.value = videoData.description;
             
-            // Update the video URL field with embed URL for clarity
-            videoUrlInput.value = embedUrl;
+            // Auto-generate meta description from description
+            if (videoData.description) {
+                metaDescriptionInput.value = videoData.description.substring(0, 160).trim() + (videoData.description.length > 160 ? '...' : '');
+            }
+            
+            // Set channel info
+            importedChannel.textContent = videoData.author;
+            importedVideoId.textContent = videoData.videoId;
+            
+            // Process thumbnails
+            processYouTubeThumbnails(videoData.videoId, videoData.thumbnail);
+            
+            // Set video URLs
+            videoUrlInput.value = videoData.embedUrl;
+            embedUrl = videoData.embedUrl;
+            youtubeVideoId = videoData.videoId;
+            
+            // Show video preview
+            videoPreviewEmbed.src = videoData.embedUrl;
+            videoPreviewContainer.style.display = 'block';
+            
+            // Auto-generate slug
+            const slug = videoData.title
+                .toLowerCase()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/[\s_-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            slugInput.value = slug.substring(0, 50);
+            
+            // Auto-detect category from title
+            const detectedCategory = detectCategoryFromTitle(videoData.title);
+            if (detectedCategory) {
+                selectCategory(detectedCategory);
+            }
+            
+            // Auto-add tags
+            selectedTags = ['youtube', 'rwanda', 'african-cinema', videoData.author.toLowerCase().replace(/\s+/g, '-')];
+            if (detectedCategory) selectedTags.push(detectedCategory);
+            updateTagsDisplay();
+            
+            // Update SEO preview
+            updateSEOPreview();
+        }
 
-            // Show loading
+        function processYouTubeThumbnails(videoId, primaryThumbnail) {
             thumbnailLoading.style.display = 'block';
             thumbnailContainer.style.display = 'block';
             thumbnailOptions.innerHTML = '';
-
-            try {
-                // Get YouTube thumbnails
-                const thumbnails = getYouTubeThumbnails(youtubeVideoId);
-                displayThumbnails(thumbnails);
-
-                // Show video preview
-                videoPreviewEmbed.src = embedUrl;
-                videoPreviewContainer.style.display = 'block';
-
-            } catch (error) {
-                console.error('Error processing YouTube URL:', error);
-                showAlert('Error processing YouTube video', 'error');
-            } finally {
-                thumbnailLoading.style.display = 'none';
-            }
-        }
-
-        function getYouTubeThumbnails(videoId) {
-            // YouTube thumbnail URLs pattern
-            return {
-                maxres: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-                sd: `https://img.youtube.com/vi/${videoId}/sddefault.jpg`,
-                hq: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-                mq: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
-                default: `https://img.youtube.com/vi/${videoId}/default.jpg`
-            };
-        }
-
-        function displayThumbnails(thumbnails) {
-            thumbnailOptions.innerHTML = '';
+            thumbnailAutoSelect.style.display = 'none';
             
-            Object.entries(thumbnails).forEach(([quality, url]) => {
-                const thumbnailOption = document.createElement('div');
-                thumbnailOption.className = 'thumbnail-option';
-                thumbnailOption.innerHTML = `
-                    <img src="${url}" alt="${quality} thumbnail" onerror="this.style.display='none'">
-                    <div class="thumbnail-quality">${quality.toUpperCase()}</div>
-                `;
+            // YouTube thumbnail qualities
+            const thumbnails = [
+                { quality: 'maxres', url: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` },
+                { quality: 'sd', url: `https://img.youtube.com/vi/${videoId}/sddefault.jpg` },
+                { quality: 'hq', url: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` },
+                { quality: 'mq', url: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` },
+                { quality: 'default', url: `https://img.youtube.com/vi/${videoId}/default.jpg` }
+            ];
+            
+            // Try to load thumbnails and select highest quality that exists
+            let highestQualityLoaded = null;
+            
+            thumbnails.forEach((thumb, index) => {
+                const img = new Image();
+                img.src = thumb.url;
                 
-                thumbnailOption.addEventListener('click', () => {
-                    // Remove selected class from all options
-                    thumbnailOptions.querySelectorAll('.thumbnail-option').forEach(opt => {
-                        opt.classList.remove('selected');
+                img.onload = function() {
+                    // Create thumbnail option
+                    const thumbnailOption = document.createElement('div');
+                    thumbnailOption.className = 'thumbnail-option';
+                    thumbnailOption.dataset.quality = thumb.quality;
+                    thumbnailOption.innerHTML = `
+                        <img src="${thumb.url}" alt="${thumb.quality} thumbnail">
+                        <div class="thumbnail-quality">${thumb.quality.toUpperCase()}</div>
+                    `;
+                    
+                    thumbnailOption.addEventListener('click', () => {
+                        selectThumbnail(thumb.url, thumb.quality);
                     });
                     
-                    // Add selected class to clicked option
-                    thumbnailOption.classList.add('selected');
+                    thumbnailOptions.appendChild(thumbnailOption);
                     
-                    // Set the selected thumbnail URL
-                    selectedThumbnail = url;
-                    
-                    // Auto-fill poster URL if empty
-                    const posterUrlInput = document.getElementById('posterUrl');
-                    if (!posterUrlInput.value) {
-                        posterUrlInput.value = url;
+                    // Auto-select highest quality thumbnail
+                    if (!highestQualityLoaded || index === 0) {
+                        highestQualityLoaded = thumb;
+                        setTimeout(() => {
+                            selectThumbnail(thumb.url, thumb.quality);
+                        }, 100);
                     }
-                });
+                };
                 
-                thumbnailOptions.appendChild(thumbnailOption);
+                img.onerror = function() {
+                    // This quality doesn't exist, skip it
+                    console.log(`Thumbnail ${thumb.quality} not available`);
+                };
             });
+            
+            setTimeout(() => {
+                thumbnailLoading.style.display = 'none';
+            }, 2000);
         }
 
-        // Preview functionality
-        previewBtn.addEventListener('click', function() {
-            showPreview();
-        });
-
-        previewClose.addEventListener('click', function() {
-            previewModal.style.display = 'none';
-            videoPreviewEmbed.src = ''; // Stop video playback when closing
-        });
-
-        function showPreview() {
-            // Validate title length
-            if (movieTitleInput.value.length > 70) {
-                showAlert('Movie title must be 70 characters or less. Please shorten your title.', 'error');
-                movieTitleInput.focus();
-                return;
+        function selectThumbnail(url, quality) {
+            // Remove selected class from all options
+            thumbnailOptions.querySelectorAll('.thumbnail-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked option
+            const selectedOption = thumbnailOptions.querySelector(`[data-quality="${quality}"]`);
+            if (selectedOption) {
+                selectedOption.classList.add('selected');
             }
-
-            // Collect form data
-            const formData = {
-                title: document.getElementById('movieTitle').value || 'Movie Title',
-                year: document.getElementById('releaseYear').value || '2024',
-                duration: document.getElementById('duration').value || '2h',
-                category: selectedCategoryInput.value || 'drama',
-                rating: document.getElementById('rating').value || 'PG',
-                description: document.getElementById('description').value || 'No description provided.',
-                director: document.getElementById('director').value || 'Not specified',
-                cast: document.getElementById('mainCast').value || 'Not specified'
-            };
-
-            // Determine video source
-            let videoSource = '';
-            if (embedUrl) {
-                if (isYouTubeUrl(embedUrl)) {
-                    videoSource = `<iframe width="100%" height="315" src="${embedUrl}" frameborder="0" allowfullscreen></iframe>`;
-                } else {
-                    videoSource = `<video width="100%" controls><source src="${embedUrl}" type="video/mp4">Your browser does not support the video tag.</video>`;
-                }
-            } else {
-                videoSource = '<p>No video source provided</p>';
-            }
-
-            // Create preview HTML
-            previewContent.innerHTML = `
-                <div style="max-width: 800px; margin: 0 auto;">
-                    <h2 style="color: var(--primary); margin-bottom: 1rem;">${formData.title} (${formData.year})</h2>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 2rem;">
-                        <div>
-                            ${selectedThumbnail ? `<img src="${selectedThumbnail}" alt="${formData.title}" style="width: 100%; border-radius: 8px;">` : 
-                            '<div style="background: #f0f0f0; padding: 2rem; text-align: center; border-radius: 8px;">No poster image</div>'}
-                        </div>
-                        <div>
-                            <p><strong>Duration:</strong> ${formData.duration}</p>
-                            <p><strong>Category:</strong> ${formData.category}</p>
-                            <p><strong>Rating:</strong> ${formData.rating}</p>
-                            <p><strong>Director:</strong> ${formData.director}</p>
-                            <p><strong>Cast:</strong> ${formData.cast}</p>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 2rem;">
-                        <h3 style="color: var(--primary); margin-bottom: 1rem;">Description</h3>
-                        <p>${formData.description}</p>
-                    </div>
-                    
-                    <div>
-                        <h3 style="color: var(--primary); margin-bottom: 1rem;">Video Preview</h3>
-                        ${videoSource}
-                    </div>
-                </div>
-            `;
-
-            // Show modal
-            previewModal.style.display = 'flex';
+            
+            // Set the selected thumbnail URL
+            selectedThumbnail = url;
+            
+            // Auto-fill poster URL
+            posterUrlInput.value = url;
+            
+            // Update imported info
+            importedThumbnail.textContent = `${quality.toUpperCase()} quality`;
+            thumbnailAutoSelect.style.display = 'block';
+            thumbnailAutoSelect.innerHTML = `<i class="fas fa-check-circle"></i> ${quality.toUpperCase()} quality thumbnail selected`;
         }
 
-        // Close modal when clicking outside
-        previewModal.addEventListener('click', function(e) {
-            if (e.target === previewModal) {
-                previewModal.style.display = 'none';
-                videoPreviewEmbed.src = ''; // Stop video playback when closing
+        function detectCategoryFromTitle(title) {
+            const lowerTitle = title.toLowerCase();
+            if (lowerTitle.includes('comedy') || lowerTitle.includes('funny') || lowerTitle.includes('humor') || lowerTitle.includes('laugh')) {
+                return 'comedy';
+            } else if (lowerTitle.includes('music') || lowerTitle.includes('song') || lowerTitle.includes('musica') || lowerTitle.includes('audio')) {
+                return 'music';
+            } else if (lowerTitle.includes('drama') || lowerTitle.includes('emotional') || lowerTitle.includes('story') || lowerTitle.includes('life')) {
+                return 'drama';
+            } else if (lowerTitle.includes('action') || lowerTitle.includes('fight') || lowerTitle.includes('adventure') || lowerTitle.includes('battle')) {
+                return 'action';
+            } else if (lowerTitle.includes('documentary') || lowerTitle.includes('doc') || lowerTitle.includes('real') || lowerTitle.includes('true')) {
+                return 'documentary';
             }
+            return 'drama'; // Default
+        }
+
+        // Update character counters when description changes
+        descriptionInput.addEventListener('input', function() {
+            if (!metaDescriptionInput.value && this.value) {
+                const shortDesc = this.value.substring(0, 157) + '...';
+                metaDescriptionInput.value = shortDesc;
+                metaDescriptionInput.dispatchEvent(new Event('input'));
+            }
+            updateSEOPreview();
         });
 
-        // Form validation before submission
-        form.addEventListener('submit', function(e) {
-            if (movieTitleInput.value.length > 70) {
-                e.preventDefault();
-                showAlert('Movie title must be 70 characters or less. Please shorten your title.', 'error');
-                movieTitleInput.focus();
-                return false;
-            }
-        });
+        metaDescriptionInput.addEventListener('input', updateSEOPreview);
+        metaTitleInput.addEventListener('input', updateSEOPreview);
+        slugInput.addEventListener('input', updateSEOPreview);
 
-        // Initialize categories (existing function)
+        // Existing functionality (keep as is)
+        // ... [Previous JavaScript code for categories, tags, etc.] ...
+
+        // Initialize categories
         function initializeCategories() {
             const existingCategories = categorySelector.querySelectorAll('.category-pill:not(#addNewCategory)');
             existingCategories.forEach(cat => cat.remove());
@@ -879,7 +1171,6 @@
             });
         }
 
-        // Category selection (existing function)
         function selectCategory(category) {
             categorySelector.querySelectorAll('.category-pill').forEach(pill => {
                 pill.classList.remove('active');
@@ -889,9 +1180,10 @@
                 selectedPill.classList.add('active');
             }
             selectedCategoryInput.value = category;
+            updateSEOPreview();
         }
 
-        // Tags management (existing functions)
+        // Tags management
         tagsInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ',') {
                 e.preventDefault();
@@ -922,9 +1214,9 @@
             updateTagsDisplay();
         }
 
-        // Auto-generate slug from title (existing function)
+        // Auto-generate slug from title
         movieTitleInput.addEventListener('blur', () => {
-            if (!slugInput.value) {
+            if (!slugInput.value && movieTitleInput.value) {
                 const slug = movieTitleInput.value
                     .toLowerCase()
                     .trim()
@@ -932,19 +1224,11 @@
                     .replace(/[\s_-]+/g, '-')
                     .replace(/^-+|-+$/g, '');
                 slugInput.value = slug;
+                updateSEOPreview();
             }
         });
 
-        // Auto-generate meta description (existing function)
-        document.getElementById('description').addEventListener('blur', function() {
-            const metaDesc = document.getElementById('metaDescription');
-            if (!metaDesc.value && this.value) {
-                const shortDesc = this.value.substring(0, 157) + '...';
-                metaDesc.value = shortDesc;
-            }
-        });
-
-        // Show alert message (existing function)
+        // Show alert message
         function showAlert(message, type = 'success') {
             alertMessage.textContent = message;
             alertMessage.className = `alert alert-${type}`;
@@ -955,14 +1239,26 @@
             }, 5000);
         }
 
-        // Form submission (existing function)
+        // Form submission
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Validate title length before submission
+            // Validate title length
             if (movieTitleInput.value.length > 70) {
                 showAlert('Movie title must be 70 characters or less. Please shorten your title.', 'error');
                 movieTitleInput.focus();
+                return;
+            }
+            
+            if (metaTitleInput.value.length > 60) {
+                showAlert('Meta title must be 60 characters or less for optimal SEO.', 'error');
+                metaTitleInput.focus();
+                return;
+            }
+            
+            if (metaDescriptionInput.value.length > 160) {
+                showAlert('Meta description must be 160 characters or less for optimal SEO.', 'error');
+                metaDescriptionInput.focus();
                 return;
             }
             
@@ -973,44 +1269,54 @@
             try {
                 // Collect form data
                 const movieData = {
-                    title: document.getElementById('movieTitle').value,
+                    title: movieTitleInput.value,
+                    metaTitle: metaTitleInput.value,
                     releaseYear: parseInt(document.getElementById('releaseYear').value),
                     duration: document.getElementById('duration').value,
                     language: document.getElementById('language').value,
                     category: selectedCategoryInput.value,
                     rating: document.getElementById('rating').value,
                     quality: document.getElementById('quality').value,
-                    description: document.getElementById('description').value,
-                    videoUrl: embedUrl || document.getElementById('videoUrl').value, // Use embed URL if available
-                    posterUrl: document.getElementById('posterUrl').value,
+                    description: descriptionInput.value,
+                    metaDescription: metaDescriptionInput.value,
+                    videoUrl: embedUrl || videoUrlInput.value,
+                    posterUrl: posterUrlInput.value,
+                    channelName: channelNameInput.value,
                     director: document.getElementById('director').value,
                     producer: document.getElementById('producer').value,
                     mainCast: document.getElementById('mainCast').value,
                     supportingCast: document.getElementById('supportingCast').value,
-                    metaDescription: document.getElementById('metaDescription').value || document.getElementById('description').value.substring(0, 160),
+                    keywords: keywordsInput.value,
+                    focusKeyword: focusKeywordInput.value,
                     tags: selectedTags,
-                    slug: document.getElementById('slug').value || generateSlug(document.getElementById('movieTitle').value),
+                    slug: slugInput.value || generateSlug(movieTitleInput.value),
                     youtubeThumbnail: selectedThumbnail,
                     youtubeVideoId: youtubeVideoId,
-                    createdAt: new Date().toISOString()
+                    youtubeChannel: channelNameInput.value,
+                    createdAt: new Date().toISOString(),
+                    seoOptimized: true
                 };
 
                 // Save to GitHub via Cloudflare Pages function
                 const response = await saveMovieToGitHub(movieData);
 
                 if (response.success) {
-                    showAlert('Movie uploaded successfully! The page will be live in a few minutes.', 'success');
+                    showAlert('Movie uploaded successfully with SEO optimization! The page will be live in a few minutes.', 'success');
                     form.reset();
                     selectedTags = [];
                     selectedThumbnail = '';
                     youtubeVideoId = '';
                     embedUrl = '';
+                    currentVideoData = null;
+                    importedInfo.style.display = 'none';
                     updateTagsDisplay();
                     thumbnailContainer.style.display = 'none';
                     videoPreviewContainer.style.display = 'none';
                     titleCounter.textContent = '0/70 characters';
-                    titleCounter.className = 'character-counter';
+                    metaTitleCounter.textContent = '0/60 characters';
+                    metaDescCounter.textContent = '0/160 characters';
                     selectCategory('comedy');
+                    updateSEOPreview();
                 } else {
                     throw new Error(response.message || 'Upload failed');
                 }
@@ -1024,7 +1330,6 @@
             }
         });
 
-        // Generate slug from title (existing function)
         function generateSlug(title) {
             return title
                 .toLowerCase()
@@ -1034,7 +1339,6 @@
                 .replace(/^-+|-+$/g, '');
         }
 
-        // Save movie to GitHub (existing function)
         async function saveMovieToGitHub(movieData) {
             let filePath;
             if (movieData.category === 'music') {
@@ -1063,6 +1367,7 @@
         // Initialize the form
         initializeCategories();
         selectCategory('comedy');
+        updateSEOPreview();
     </script>
 </body>
 </html>
