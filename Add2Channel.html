@@ -3,496 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload to Channel - Rwanda Cinema</title>
+    <title>Create MD File Test</title>
     <style>
-        :root {
-            --primary: #008753;
-            --secondary: #FAD201;
-            --dark: #1a1a1a;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: system-ui, sans-serif;
-        }
-        
         body {
-            background: #f5f5f5;
-            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
             padding: 20px;
         }
         
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
+            background: #f5f5f5;
+            padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            overflow: hidden;
         }
         
-        .header {
-            background: var(--primary);
-            color: white;
-            padding: 2rem;
+        h1 {
+            color: #008753;
             text-align: center;
         }
         
-        .header h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .form-section {
-            padding: 2rem;
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--dark);
-        }
-        
-        .required::after {
-            content: " *";
-            color: #dc3545;
-        }
-        
-        .form-control {
+        input {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
+            margin: 10px 0;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
+            border-radius: 5px;
         }
         
-        .form-control:focus {
-            border-color: var(--primary);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0,135,83,0.1);
-        }
-        
-        .form-help {
-            font-size: 0.85rem;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        .btn {
-            background: var(--primary);
+        button {
+            background: #008753;
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-size: 1rem;
+            padding: 12px 20px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background 0.3s;
+            width: 100%;
+            font-size: 16px;
         }
         
-        .btn:hover {
+        button:hover {
             background: #006641;
         }
         
-        .btn-youtube {
-            background: #FF0000;
-        }
-        
-        .btn-youtube:hover {
-            background: #CC0000;
-        }
-        
-        .alert {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            display: none;
-        }
-        
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .import-section {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #FF0000;
-        }
-        
-        .video-preview {
-            max-width: 100%;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: none;
-        }
-        
-        .loading {
-            display: none;
-            text-align: center;
+        .result {
+            margin-top: 20px;
             padding: 10px;
-        }
-        
-        .loading i {
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            background: #e9ffe9;
+            border-radius: 5px;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>📺 Upload to Channel</h1>
-            <p>Add videos to channel JSON files only</p>
+        <h1>Create Test MD File</h1>
+        
+        <div>
+            <input type="text" id="fileName" placeholder="Enter file name (e.g., test-video)" required>
+            <input type="text" id="channelName" placeholder="Channel name (e.g., nyaxo-comedy)" required>
         </div>
         
-        <div class="form-section">
-            <div id="alertMessage" class="alert"></div>
-            
-            <!-- YouTube Import -->
-            <div class="import-section">
-                <h3 style="color: #FF0000; margin-bottom: 10px;">Import from YouTube</h3>
-                <div class="form-group">
-                    <label>YouTube Video URL</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="url" id="youtubeUrl" class="form-control" 
-                               placeholder="https://youtube.com/watch?v=...">
-                        <button type="button" id="importBtn" class="btn btn-youtube">Import</button>
-                    </div>
-                    <div class="form-help">Auto-fetch video details from YouTube</div>
-                </div>
-                
-                <img id="thumbnailPreview" class="video-preview" alt="Thumbnail preview">
-            </div>
-            
-            <form id="channelUploadForm">
-                <!-- Channel Info -->
-                <div class="form-group">
-                    <label for="channelName" class="required">Channel Name</label>
-                    <input type="text" id="channelName" class="form-control" required 
-                           placeholder="Enter channel name (e.g., Nyaxo Comedy)">
-                    <div class="form-help">Will create/update: /channels/channel-name/</div>
-                </div>
-                
-                <!-- Video URL -->
-                <div class="form-group">
-                    <label for="videoUrl" class="required">Video URL</label>
-                    <input type="url" id="videoUrl" class="form-control" required 
-                           placeholder="https://rwandacinema.site/comedy/video-slug">
-                    <div class="form-help">Link to the video page on your site</div>
-                </div>
-                
-                <!-- Video Details -->
-                <div class="form-group">
-                    <label for="videoTitle" class="required">Video Title</label>
-                    <input type="text" id="videoTitle" class="form-control" required 
-                           placeholder="Enter video title">
-                </div>
-                
-                <div class="form-group">
-                    <label for="videoDescription" class="required">Description</label>
-                    <textarea id="videoDescription" class="form-control" required rows="3"
-                              placeholder="Video description"></textarea>
-                </div>
-                
-                <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
-                        <label for="duration" class="required">Duration</label>
-                        <input type="text" id="duration" class="form-control" required 
-                               placeholder="e.g., 15:30 or 45 minutes">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="quality" class="required">Quality</label>
-                        <select id="quality" class="form-control" required>
-                            <option value="480p">480p SD</option>
-                            <option value="720p" selected>720p HD</option>
-                            <option value="1080p">1080p Full HD</option>
-                            <option value="4K">4K Ultra HD</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="category" class="required">Category</label>
-                        <select id="category" class="form-control" required>
-                            <option value="comedy">Comedy</option>
-                            <option value="drama">Drama</option>
-                            <option value="music">Music</option>
-                            <option value="action">Action</option>
-                            <option value="documentary">Documentary</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="releaseYear" class="required">Release Year</label>
-                        <input type="number" id="releaseYear" class="form-control" required 
-                               min="2000" max="2030" value="2024">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="thumbnailUrl" class="required">Thumbnail URL</label>
-                    <input type="url" id="thumbnailUrl" class="form-control" required 
-                           placeholder="https://example.com/thumbnail.jpg">
-                    <div class="form-help">Image URL for video thumbnail</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="youtubeId">YouTube ID (Optional)</label>
-                    <input type="text" id="youtubeId" class="form-control" 
-                           placeholder="dQw4w9WgXcQ">
-                    <div class="form-help">For YouTube embedding</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="views">Initial Views</label>
-                    <input type="number" id="views" class="form-control" 
-                           value="0" min="0">
-                </div>
-                
-                <div class="form-group">
-                    <label for="likes">Initial Likes</label>
-                    <input type="number" id="likes" class="form-control" 
-                           value="0" min="0">
-                </div>
-                
-                <!-- Submit Button -->
-                <div style="text-align: center; margin-top: 2rem;">
-                    <button type="submit" class="btn" style="padding: 15px 40px; font-size: 1.1rem;">
-                        📤 Add to Channel JSON
-                    </button>
-                </div>
-            </form>
-        </div>
+        <button onclick="createMdFile()">Create MD File</button>
+        
+        <div id="result" class="result"></div>
     </div>
 
     <script>
-        // DOM Elements
-        const form = document.getElementById('channelUploadForm');
-        const alertMessage = document.getElementById('alertMessage');
-        const youtubeUrlInput = document.getElementById('youtubeUrl');
-        const importBtn = document.getElementById('importBtn');
-        const thumbnailPreview = document.getElementById('thumbnailPreview');
-        
-        // Form fields
-        const channelNameInput = document.getElementById('channelName');
-        const videoUrlInput = document.getElementById('videoUrl');
-        const videoTitleInput = document.getElementById('videoTitle');
-        const videoDescInput = document.getElementById('videoDescription');
-        const durationInput = document.getElementById('duration');
-        const qualityInput = document.getElementById('quality');
-        const categoryInput = document.getElementById('category');
-        const releaseYearInput = document.getElementById('releaseYear');
-        const thumbnailUrlInput = document.getElementById('thumbnailUrl');
-        const youtubeIdInput = document.getElementById('youtubeId');
-        const viewsInput = document.getElementById('views');
-        const likesInput = document.getElementById('likes');
-        
-        // YouTube Import
-        importBtn.addEventListener('click', async function() {
-            const youtubeUrl = youtubeUrlInput.value.trim();
-            if (!youtubeUrl) {
-                showAlert('Please enter a YouTube URL', 'error');
+        async function createMdFile() {
+            const fileName = document.getElementById('fileName').value.trim();
+            const channelName = document.getElementById('channelName').value.trim();
+            
+            if (!fileName || !channelName) {
+                alert('Please fill all fields');
                 return;
             }
             
-            const importBtn = this;
-            importBtn.disabled = true;
-            importBtn.innerHTML = 'Importing...';
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Creating file...';
             
             try {
-                const videoData = await fetchYouTubeData(youtubeUrl);
-                populateForm(videoData);
-                showAlert('YouTube data imported successfully!', 'success');
-            } catch (error) {
-                showAlert('Failed to import: ' + error.message, 'error');
-            } finally {
-                importBtn.disabled = false;
-                importBtn.innerHTML = 'Import';
-            }
-        });
-        
-        async function fetchYouTubeData(youtubeUrl) {
-            // Extract video ID
-            const videoId = extractYouTubeVideoId(youtubeUrl);
-            if (!videoId) throw new Error('Invalid YouTube URL');
-            
-            try {
-                // Try to get data from YouTube oEmbed
-                const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(youtubeUrl)}&format=json`;
-                const response = await fetch(oembedUrl);
-                
-                if (!response.ok) throw new Error('Failed to fetch YouTube data');
+                const response = await fetch('/api/create-md', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fileName: fileName,
+                        channelName: channelName,
+                        content: `# Test MD File\n\nCreated: ${new Date().toLocaleString()}\n\nThis is a test MD file for channel: ${channelName}`
+                    })
+                });
                 
                 const data = await response.json();
                 
-                // Try to get description from other sources
-                let description = '';
-                try {
-                    const noembedResponse = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(youtubeUrl)}`);
-                    const noembedData = await noembedResponse.json();
-                    description = noembedData.description || '';
-                } catch (e) {
-                    console.log('Could not fetch description');
-                }
-                
-                return {
-                    title: data.title,
-                    description: description,
-                    thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-                    channel: data.author_name || 'YouTube Channel',
-                    youtubeId: videoId,
-                    youtubeUrl: youtubeUrl
-                };
-            } catch (error) {
-                // Fallback: Use basic extraction
-                console.log('Using fallback method');
-                return {
-                    title: `YouTube Video ${videoId}`,
-                    description: '',
-                    thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-                    channel: 'YouTube Channel',
-                    youtubeId: videoId,
-                    youtubeUrl: youtubeUrl
-                };
-            }
-        }
-        
-        function extractYouTubeVideoId(url) {
-            const patterns = [
-                /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/,
-                /youtube\.com\/embed\/([^?]+)/,
-                /youtube\.com\/v\/([^?]+)/,
-                /youtube\.com\/watch\?.*v=([^&]+)/
-            ];
-            
-            for (const pattern of patterns) {
-                const match = url.match(pattern);
-                if (match && match[1]) {
-                    return match[1].substring(0, 11);
-                }
-            }
-            return null;
-        }
-        
-        function populateForm(videoData) {
-            // Auto-fill form fields
-            videoTitleInput.value = videoData.title;
-            videoDescInput.value = videoData.description;
-            channelNameInput.value = videoData.channel;
-            thumbnailUrlInput.value = videoData.thumbnail;
-            youtubeIdInput.value = videoData.youtubeId;
-            
-            // Set current year as release year
-            releaseYearInput.value = new Date().getFullYear();
-            
-            // Auto-generate site URL
-            const slug = generateSlug(videoData.title);
-            videoUrlInput.value = `https://rwandacinema.site/videos/${slug}`;
-            
-            // Show thumbnail preview
-            thumbnailPreview.src = videoData.thumbnail;
-            thumbnailPreview.style.display = 'block';
-        }
-        
-        function generateSlug(str) {
-            return str
-                .toLowerCase()
-                .trim()
-                .replace(/[^\w\s-]/g, '')
-                .replace(/[\s_-]+/g, '-')
-                .replace(/^-+|-+$/g, '')
-                .substring(0, 50);
-        }
-        
-        // Form Submission
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = 'Adding...';
-            
-            try {
-                const videoData = {
-                    channelName: channelNameInput.value,
-                    channelSlug: generateSlug(channelNameInput.value),
-                    videoUrl: videoUrlInput.value,
-                    title: videoTitleInput.value,
-                    description: videoDescInput.value,
-                    duration: durationInput.value,
-                    quality: qualityInput.value,
-                    category: categoryInput.value,
-                    releaseYear: parseInt(releaseYearInput.value),
-                    thumbnail: thumbnailUrlInput.value,
-                    youtubeId: youtubeIdInput.value || '',
-                    views: parseInt(viewsInput.value) || 0,
-                    likes: parseInt(likesInput.value) || 0,
-                    uploadDate: new Date().toISOString(),
-                    id: generateVideoId()
-                };
-                
-                const result = await addToChannelJSON(videoData);
-                
-                if (result.success) {
-                    showAlert(`Video added to ${videoData.channelName} channel! JSON file updated.`, 'success');
-                    form.reset();
-                    thumbnailPreview.style.display = 'none';
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        ✅ Success!<br>
+                        File created: <strong>${data.filePath}</strong><br>
+                        GitHub URL: <a href="${data.githubUrl}" target="_blank">View on GitHub</a>
+                    `;
+                    resultDiv.style.background = '#e9ffe9';
                 } else {
-                    throw new Error(result.message);
+                    resultDiv.innerHTML = `❌ Error: ${data.message}`;
+                    resultDiv.style.background = '#ffe9e9';
                 }
             } catch (error) {
-                showAlert('Error: ' + error.message, 'error');
-                console.error('Upload error:', error);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '📤 Add to Channel JSON';
+                resultDiv.innerHTML = `❌ Network error: ${error.message}`;
+                resultDiv.style.background = '#ffe9e9';
             }
-        });
-        
-        async function addToChannelJSON(videoData) {
-            const response = await fetch('/api/add-to-channel', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(videoData)
-            });
-            
-            return await response.json();
-        }
-        
-        function generateVideoId() {
-            return 'vid_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-        
-        function showAlert(message, type = 'success') {
-            alertMessage.textContent = message;
-            alertMessage.className = `alert alert-${type}`;
-            alertMessage.style.display = 'block';
-            
-            setTimeout(() => {
-                alertMessage.style.display = 'none';
-            }, 5000);
         }
     </script>
 </body>
