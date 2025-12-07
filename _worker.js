@@ -5,7 +5,7 @@ export default {
     const pathname = url.pathname;
     
     // Show simple dashboard
-    if (pathname === '/') {
+    if (pathname === '/uploadc.html') {
       return new Response(`
         <!DOCTYPE html>
         <html>
