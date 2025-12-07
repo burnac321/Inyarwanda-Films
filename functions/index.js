@@ -176,6 +176,45 @@ function getLatestVideosByCategory(videos, limit = 8) {
 function generateHomepageHTML(data) {
   const { searchQuery, categoryFilter, filteredVideos, allVideos, allCategories, latestByCategory, baseUrl } = data;
   const isSearchOrFilter = searchQuery || categoryFilter;
+  
+  // Build canonical URL based on filters
+  let canonicalUrl = baseUrl;
+  const queryParams = [];
+  if (categoryFilter) queryParams.push(`category=${encodeURIComponent(categoryFilter)}`);
+  if (searchQuery) queryParams.push(`search=${encodeURIComponent(searchQuery)}`);
+  
+  if (queryParams.length > 0) {
+    canonicalUrl = `${baseUrl}/?${queryParams.join('&')}`;
+  }
+
+  // Build breadcrumb items for Schema.org
+  const breadcrumbItems = [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": baseUrl
+    }
+  ];
+  
+  let position = 2;
+  if (categoryFilter) {
+    breadcrumbItems.push({
+      "@type": "ListItem",
+      "position": position++,
+      "name": capitalizeFirst(categoryFilter),
+      "item": `${baseUrl}/?category=${encodeURIComponent(categoryFilter)}`
+    });
+  }
+  
+  if (searchQuery) {
+    breadcrumbItems.push({
+      "@type": "ListItem",
+      "position": position,
+      "name": `Search: ${searchQuery}`,
+      "item": canonicalUrl
+    });
+  }
 
   return `<!DOCTYPE html>
 <html lang="rw">
@@ -184,7 +223,7 @@ function generateHomepageHTML(data) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Essential Meta Tags -->
-    <link rel="canonical" href="${baseUrl}/" />
+    <link rel="canonical" href="${canonicalUrl}" />
     <meta name="theme-color" content="#008753">
     <meta name="language" content="rw">
     
@@ -193,30 +232,38 @@ function generateHomepageHTML(data) {
     
     <!-- Primary Meta Tags -->
     <title>${isSearchOrFilter ? 
-      `"${escapeHTML(searchQuery)}" ${categoryFilter ? `in ${capitalizeFirst(categoryFilter)}` : ''} - Rwanda Cinema` : 
+      `${searchQuery ? `"${escapeHTML(searchQuery)}"` : ''} ${categoryFilter ? `${searchQuery ? 'in' : ''} ${capitalizeFirst(categoryFilter)}` : ''} - Rwanda Cinema` : 
       'Rwanda Cinema | Watch Rwandan Movies & Musics Online'}</title>
     <meta name="description" content="${isSearchOrFilter ? 
-      `Search results for ${escapeHTML(searchQuery)} ${categoryFilter ? `in ${categoryFilter}` : 'Rwandan movies'}` : 
+      `${searchQuery ? `Search results for "${escapeHTML(searchQuery)}"` : 'Browse'}${categoryFilter ? ` in ${capitalizeFirst(categoryFilter)} category` : ''} - Watch Rwandan movies, Kinyarwanda films, comedy series and music videos online` : 
       'Watch latest Rwandan movies, Kinyarwanda comedy series like Papa Sava, drama films and Rwandan Music videos. Stream African cinema online free.'}">
-    <meta name="keywords" content="Rwandan movies, Kinyarwanda films, Inyarwanda Films, watch online, stream movies, comedy, drama, music, African cinema, Rwanda entertainment">
+    <meta name="keywords" content="Rwandan movies, Kinyarwanda films, Inyarwanda Films, watch online, stream movies, comedy, drama, music, African cinema, Rwanda entertainment${categoryFilter ? `, ${categoryFilter}` : ''}${searchQuery ? `, ${escapeHTML(searchQuery)}` : ''}">
     <meta name="author" content="Rwanda Cinema">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7959421921456132"
      crossorigin="anonymous"></script> 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="${baseUrl}/">
-    <meta property="og:title" content="Rwanda Cinema| Watch Rwandan Movies and Musics Online">
-    <meta property="og:description" content="Watch latest Rwandan movies, Kinyarwanda films, comedy videos and Music Videos. Stream high-quality content online for free.">
+    <meta property="og:url" content="${canonicalUrl}">
+    <meta property="og:title" content="${isSearchOrFilter ? 
+      `${searchQuery ? `"${escapeHTML(searchQuery)}"` : ''} ${categoryFilter ? `${searchQuery ? 'in' : ''} ${capitalizeFirst(categoryFilter)}` : ''} - Rwanda Cinema` : 
+      'Rwanda Cinema | Watch Rwandan Movies and Musics Online'}">
+    <meta property="og:description" content="${isSearchOrFilter ? 
+      `${searchQuery ? `Search results for "${escapeHTML(searchQuery)}"` : 'Browse'}${categoryFilter ? ` in ${capitalizeFirst(categoryFilter)} category` : ''} - Watch Rwandan movies online for free` : 
+      'Watch latest Rwandan movies, Kinyarwanda films, comedy videos and Music Videos. Stream high-quality content online for free.'}">
     <meta property="og:image" content="${baseUrl}/og-image.jpg">
     <meta property="og:locale" content="rw_RW">
     <meta property="og:site_name" content="Rwanda Cinema">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="${baseUrl}/">
-    <meta property="twitter:title" content="Rwanda Cinema | Watch Rwandan Movies and Musics Online">
-    <meta property="twitter:description" content="Watch latest Rwandan movies, Kinyarwanda films, comedy videos and Rwandan musics for free.">
+    <meta property="twitter:url" content="${canonicalUrl}">
+    <meta property="twitter:title" content="${isSearchOrFilter ? 
+      `${searchQuery ? `"${escapeHTML(searchQuery)}"` : ''} ${categoryFilter ? `${searchQuery ? 'in' : ''} ${capitalizeFirst(categoryFilter)}` : ''} - Rwanda Cinema` : 
+      'Rwanda Cinema | Watch Rwandan Movies and Musics Online'}">
+    <meta property="twitter:description" content="${isSearchOrFilter ? 
+      `${searchQuery ? `Search results for "${escapeHTML(searchQuery)}"` : 'Browse'}${categoryFilter ? ` in ${capitalizeFirst(categoryFilter)} category` : ''} - Watch Rwandan movies online for free` : 
+      'Watch latest Rwandan movies, Kinyarwanda films, comedy videos and Rwandan musics for free.'}">
 
     <script async src="https://fundingchoicesmessages.google.com/i/pub-7959421921456132?ers=1"></script><script>(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>
     <script>(function(){'use strict';function aa(a){var b=0;return function(){return b<a.length?{done:!1,value:a[b++]}:{done:!0}}}var ba=typeof Object.defineProperties=="function"?Object.defineProperty:function(a,b,c){if(a==Array.prototype||a==Object.prototype)return a;a[b]=c.value;return a};
@@ -257,16 +304,20 @@ a.j.push(d)}function Y(a,b,c){for(var d=W(1,5),e=0;e<d;e++){var f=X(a);b.appendC
 function tb(a,b){b<=0||a.g!=null&&a.g.offsetHeight!==0&&a.g.offsetWidth!==0||(vb(a),sb(a),u.setTimeout(function(){tb(a,b-1)},50))}function vb(a){for(var b=n(a.j),c=b.next();!c.done;c=b.next())(c=c.value)&&c.parentNode&&c.parentNode.removeChild(c);a.j=[];(b=a.g)&&b.parentNode&&b.parentNode.removeChild(b);a.g=null};function wb(a,b,c,d,e){function f(k){document.body?g(document.body):k>0?u.setTimeout(function(){f(k-1)},e):b()}function g(k){k.appendChild(h);u.setTimeout(function(){h?(h.offsetHeight!==0&&h.offsetWidth!==0?b():a(),h.parentNode&&h.parentNode.removeChild(h)):a()},d)}var h=xb(c);f(3)}function xb(a){var b=document.createElement("div");b.className=a;b.style.width="1px";b.style.height="1px";b.style.position="absolute";b.style.left="-10000px";b.style.top="-10000px";b.style.zIndex="-10000";return b};function Ya(a){this.h=P(a)}t(Ya,T);function yb(a){this.h=P(a)}t(yb,T);var zb=bb(yb);function Ab(a){if(!a)return null;a=Za(a,4);var b;a===null||a===void 0?b=null:b=fb(a);return b};var Bb=ea([""]),Cb=ea([""]);function Db(a,b){this.m=a;this.o=new kb(a.document);this.g=b;this.j=R(this.g,1);this.u=Ab(Xa(this.g,2))||gb(Bb);this.i=!1;b=Ab(Xa(this.g,13))||gb(Cb);this.l=new qb(a.document,b,R(this.g,12))}Db.prototype.start=function(){Eb(this)};
 function Eb(a){Fb(a);mb(a.o,a.u,3,!1,function(){a:{var b=a.j;var c=u.btoa(b);if(c=u[c]){try{var d=db(u.atob(c))}catch(e){b=!1;break a}b=b===Za(d,1)}else b=!1}b?Z(a,R(a.g,14)):(Z(a,R(a.g,8)),rb(a.l))},function(){wb(function(){Z(a,R(a.g,7));rb(a.l)},function(){return Z(a,R(a.g,6))},R(a.g,9),$a(a.g,10),$a(a.g,11))})}function Z(a,b){a.i||(a.i=!0,a=new a.m.XMLHttpRequest,a.open("GET",b,!0),a.send())}function Fb(a){var b=u.btoa(a.j);a.m[b]&&Z(a,R(a.g,5))};(function(a,b){u[a]=function(){var c=ma.apply(0,arguments);u[a]=function(){};b.call.apply(b,[null].concat(c instanceof Array?c:fa(n(c))))}})("__h82AlnkH6D91__",function(a){typeof window.atob==="function"&&(new Db(window,zb(window.atob(a)))).start()});}).call(this);
 
-window.__h82AlnkH6D91__("WyJwdWItNzk1OTQyMTkyMTQ1NjEzMiIsW251bGwsbnVsbCxudWxsLCJodHRwczovL2Z1bmRpbmdjaG9pY2VzbWVzc2FnZXMuZ29vZ2xlLmNvbS9iL3B1Yi03OTU5NDIxOTIxNDU2MTMyIl0sbnVsbCxudWxsLCJodHRwczovL2Z1bmRpbmdjaG9pY2VzbWVzc2FnZXMuZ29vZ2xlLmNvbS9lbC9BR1NLV3hVbF8tMjg0V1ZTc0dxTW1RTzRyRk5CNDk0UUVjQy1TdzE4LXoxV3lJM0xFWnB5Rl9tc1ExbVBIcWxFRkl0X0o4RlYxZjdORjVKXzF5cVdiZ0sybjdMc0p3XHUwMDNkXHUwMDNkP3RlXHUwMDNkVE9LRU5fRVhQT1NFRCIsImh0dHBzOi8vZnVuZGluZ2Nob2ljZXNtZXNzYWdlcy5nb29nbGUuY29tL2VsL0FHU0tXeFdLWW5CZ1VleE9Od0RsZ19heFViSWxJM0JHYmREWnNkTmUzNkNNcFIzQTlCcFBJWVd6NkcyY1FZd3dPV1M2bmZvY1hjWVFXQzc0eVc2Mk9IaExVSlZnRndcdTAwM2RcdTAwM2Q/YWJcdTAwM2QxXHUwMDI2c2JmXHUwMDNkMSIsImh0dHBzOi8vZnVuZGluZ2Nob2ljZXNtZXNzYWdlcy5nb29nbGUuY29tL2VsL0FHU0tXeFZrOXVhRWl6VUhJaTVwZEpXSVd4aEc3UU1TUnNvWFJIT3JmOHFKcV8xb3dNQkoyaWNxMklycFN6TktGLXNMODFXQjZXbjFRc2tlX0RzbVBvQmRuOFdsekFcdTAwM2RcdTAwM2Q/YWJcdTAwM2QyXHUwMDI2c2JmXHUwMDNkMSIsImh0dHBzOi8vZnVuZGluZ2Nob2ljZXNtZXNzYWdlcy5nb29nbGUuY29tL2VsL0FHU0tXeFg1MnVoOTRyVFVFaDNWU1ZqLTJXMldxc0YzOFRwb29jZjZWQTRsUlB1Tm9kUFB0MjF6bllRMmJDSEpteUViT2dxWFlNMm5NRFBlOXB2VVh3M1dRclZoUGdcdTAwM2RcdTAwM2Q/c2JmXHUwMDNkMiIsImRpdi1ncHQtYWQiLDIwLDEwMCwiY0hWaUxUYzVOVGswTWpFNU1qRTBOVFl4TXpJXHUwMDNkIixbbnVsbCxudWxsLG51bGwsImh0dHBzOi8vd3d3LmdzdGF0aWMuY29tLzBlbW4vZi9wL3B1Yi03OTU5NDIxOTIxNDU2MTMyLmpzP3VzcXBcdTAwM2RDQTgiXSwiaHR0cHM6Ly9mdW5kaW5nY2hvaWNlc21lc3NhZ2VzLmdvb2dsZS5jb20vZWwvQUdTS1d4WDJpVTdScFJiWUt0dnQ2UFVFNzdidHRhUXNfSTZfU3pQOUZKU295RHM2ZFc0SllFWjM0QjJTc3YwREx0Ukk0YUVEZ2t4Q3pMM21CaEU4V1Yzc2lfbmV4QVx1MDAzZFx1MDAzZCJd");</script>
+window.__h82AlnkH6D91__("WyJwdWItNzk1OTQyMTkyMTQ1NjEzMiIsW251bGwsbnVsbCxudWxsLCJodHRwczovL2Z1bmRpbmdjaG9pY2VzbWVzc2FnZXMuZ29vZ2xlLmNvbS9iL3B1Yi03OTU5NDIxOTIxNDU2MTMyIl0sbnVsbCxudWxsLCJodHRwczovL2Z1bmRpbmdjaG9pY2VzbWVzc2FnZXMuZ29vZ2xlLmNvbS9lbC9BR1NLV3hVbF8tMjg0V1ZTc0dxTW1RTzRyRk5CNDk0UUVjQy1TdzE4LXoxV3lJM0xFWnB5Rl9tc1ExbVBIcWxFRkl0X0o4RlYxZjdORjVKXzF5cVdiZ0sybjdMc0p3XHUwMDNkXHUwMDNkP3RlXHUwMDNkVE9LRU5fRVhQT1NFRCIsImh0dHBzOi8vZnVuZGluZ2Nob2ljZXNtZXNzYWdlcy5nb29nbGUuY29tL2VsL0FHU0tXeFdLWW5CZ1VleE9Od0RsZ19heFViSWxJM0JHYmREWnNkTmUzNkNNcFIzQTlCcFBJWVd6NkcyY1FZd3dPV1M2bmZvY1hjWVFXQzc0eVc2Mk9IaExVSlZnRndcdTAwM2RcdTAwM2Q/YWJcdTAwM2QxXHUwMDI2c2JmXHUwMDNkMSIsImh0dHBzOi8vZnVuZGluZ2Nob2ljZXNtZXNzYWdlcy5nb29nbGUuY29tL2VsL0FHU0tXeFZrOXVhRWl6VUhJaTVwZEpXSVd4aEc3UU1TUnNvWFJIT3JmOHFKcV8xb3dNQkoyaWNxMklycFN6TktGLXNMODFXQjZXbjFRc2tlX0RzbVBvQmRuOFdsekFcdTAwM2RcdTAwM2Q/YWJcdTAwM2QyXHUwMDI2c2JmXHUwMDNkMSIsImh0dHBzOi8vZnVuZGluZ2Nob2ljZXNtZXNzYWdlcy5nb29nbGUuY29tL2VsL0FHU0tXeFg1MnVoOTRyVFVFaDNWU1ZqLTJXMldxc0YzOFRwb29jZjZWQTRsUlB1Tm9kUFB0MjF6bllRMmJDSEpteUViT2dxWFlNMm5NRFBlOXB2VVh3M1dRclZoUGdcdTAwM2RcdTAwM2Q/c2JmXHUwMDNkMiIsImRpdi1ncHQtYWQiLDIwLDEwMCwiY0hWaUxUYzVOVGswTWpFNU1qRTBOVFl4TXpJXHUwMDNkIixbbnVsbCxudWxsLG51bGwsImh0dHBzOi8vd3d3LmdzdGF0aWM5cmVhbGx5LmNvbS8wZW1uL2YvcC9wdWItNzk1OTQyMTkyMTQ1NjEzMi5qcz91c3FxXHUwMDNkQ0E4Il0sImh0dHBzOi8vZnVuZGluZ2Nob2ljZXNtZXNzYWdlcy5nb29nbGUuY29tL2VsL0FHU0tXeFgyN3VoSWh0UGNJVGtGSjh3QUZqcTdTZ1BZQzBtdnFzSWJqQ29jU2V5cUVKQ1Y1UkhKdE5HM3htcldlSW5EaG5FZzh0czFycXJnRDF4YzJyaW1yS1x1MDAzZFx1MDAzZCJd");
 
     <!-- Schema.org Structured Data -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
-        "@type": "VideoGallery",
-        "name": "Rwanda Cinema - Rwandan Movies and Musics Online",
-        "description": "Watch latest Rwandan movies, Kinyarwanda comedy series, drama films and music videos online for free",
-        "url": "${baseUrl}",
+        "@type": "${isSearchOrFilter ? 'SearchResultsPage' : 'VideoGallery'}",
+        "name": "${isSearchOrFilter ? 
+          `${searchQuery ? `Search: "${escapeHTML(searchQuery)}"` : capitalizeFirst(categoryFilter)} - Rwanda Cinema` : 
+          'Rwanda Cinema - Rwandan Movies and Musics Online'}",
+        "description": "${isSearchOrFilter ? 
+          `${searchQuery ? `Search results for "${escapeHTML(searchQuery)}"` : 'Browse'}${categoryFilter ? ` in ${capitalizeFirst(categoryFilter)} category` : ''} - Watch Rwandan movies online` : 
+          'Watch latest Rwandan movies, Kinyarwanda comedy series, drama films and music videos online for free'}",
+        "url": "${canonicalUrl}",
         "publisher": {
             "@type": "Organization",
             "name": "Rwanda Cinema",
@@ -277,11 +328,16 @@ window.__h82AlnkH6D91__("WyJwdWItNzk1OTQyMTkyMTQ1NjEzMiIsW251bGwsbnVsbCxudWxsLCJ
         },
         "inLanguage": "rw",
         "countryOfOrigin": "RW",
-        "numberOfItems": ${allVideos.length},
+        "numberOfItems": ${filteredVideos.length},
         "mainEntityOfPage": {
             "@type": "WebPage",
-            "@id": "${baseUrl}"
-        }
+            "@id": "${canonicalUrl}",
+            "breadcrumb": {
+                "@type": "BreadcrumbList",
+                "itemListElement": ${JSON.stringify(breadcrumbItems)}
+            }
+        }${isSearchOrFilter && searchQuery ? `,
+        "query": "${escapeHTML(searchQuery)}"` : ''}
     }
     </script>
 
@@ -290,14 +346,7 @@ window.__h82AlnkH6D91__("WyJwdWItNzk1OTQyMTkyMTQ1NjEzMiIsW251bGwsbnVsbCxudWxsLCJ
     {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
-        "itemListElement": [
-            {
-                "@type": "ListItem",
-                "position": 1,
-                "name": "Home",
-                "item": "${baseUrl}"
-            }
-        ]
+        "itemListElement": ${JSON.stringify(breadcrumbItems)}
     }
     </script>
     
@@ -822,7 +871,7 @@ window.__h82AlnkH6D91__("WyJwdWItNzk1OTQyMTkyMTQ1NjEzMiIsW251bGwsbnVsbCxudWxsLCJ
                 <button class="addbutton" aria-label="Add Video" onclick="location.href='/AddVideo.html'"> Upload Here</button>
 
                 <nav class="nav" role="navigation" aria-label="Main navigation">
-                    <a href="${baseUrl}/" class="nav-link ${!categoryFilter ? 'active' : ''}">All Videos</a>
+                    <a href="${baseUrl}/" class="nav-link ${!categoryFilter && !searchQuery ? 'active' : ''}">All Videos</a>
                     ${allCategories.map(category => `
                         <a href="${baseUrl}/?category=${category}" class="nav-link ${categoryFilter === category ? 'active' : ''}">
                             ${capitalizeFirst(category)}
@@ -838,9 +887,13 @@ window.__h82AlnkH6D91__("WyJwdWItNzk1OTQyMTkyMTQ1NjEzMiIsW251bGwsbnVsbCxudWxsLCJ
         <!-- Breadcrumb -->
         <nav class="breadcrumb" aria-label="Breadcrumb">
             <a href="${baseUrl}/">Home</a>
-            ${isSearchOrFilter ? `
+            ${categoryFilter ? `
                 <span>></span>
-                <span>${searchQuery ? `Search: "${escapeHTML(searchQuery)}"` : `Category: ${capitalizeFirst(categoryFilter)}`}</span>
+                <a href="${baseUrl}/?category=${categoryFilter}">${capitalizeFirst(categoryFilter)}</a>
+            ` : ''}
+            ${searchQuery ? `
+                <span>></span>
+                <span>Search: "${escapeHTML(searchQuery)}"</span>
             ` : ''}
         </nav>
 
@@ -1106,4 +1159,4 @@ function generateErrorHTML() {
     <a href="/">Go Back Home</a>
 </body>
 </html>`;
-    }
+}
