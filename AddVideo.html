@@ -1350,7 +1350,7 @@
             movieData.filePath = filePath;
 
             try {
-                const response = await fetch('functions/api/upload-movie', {
+                const response = await fetch('/api/upload-movie', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
