@@ -10,7 +10,7 @@ export default {
         }
         
         // Simple test page
-        if (pathname === '/' || pathname === '/index.html') {
+        if (pathname === '/' || pathname === '/upload.html') {
             return new Response(`
                 <html>
                 <head>
