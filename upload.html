@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Channel Video Upload - Simple</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .container { background: #f5f5f5; padding: 30px; border-radius: 10px; }
+        h1 { color: #008753; }
+        .form-group { margin: 20px 0; }
+        input, textarea, select { width: 100%; padding: 10px; margin: 5px 0; }
+        button { background: #008753; color: white; border: none; padding: 15px; cursor: pointer; width: 100%; }
+        .result { margin-top: 20px; padding: 15px; background: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Add Video to Channel</h1>
+        
+        <div class="form-group">
+            <label>Channel Name:</label>
+            <input type="text" id="channelName" placeholder="nyaxo-comedy">
+        </div>
+        
+        <div class="form-group">
+            <label>Video Title:</label>
+            <input type="text" id="videoTitle" placeholder="Funny Comedy Skit">
+        </div>
+        
+        <div class="form-group">
+            <label>Video Description:</label>
+            <textarea id="videoDescription" rows="3"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>Category:</label>
+            <select id="category">
+                <option>comedy</option>
+                <option>music</option>
+                <option>drama</option>
+                <option>action</option>
+            </select>
+        </div>
+        
+        <button onclick="uploadToChannel()">Create Channel Video File</button>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function uploadToChannel() {
+            const channel = document.getElementById('channelName').value.trim();
+            const title = document.getElementById('videoTitle').value.trim();
+            const description = document.getElementById('videoDescription').value.trim();
+            const category = document.getElementById('category').value;
+            
+            if (!channel || !title) {
+                alert('Please fill channel name and title');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Creating file...';
+            
+            try {
+                // Generate file name from title
+                const fileName = generateSlug(title);
+                
+                // Create MD content
+                const mdContent = `---
+title: "${title}"
+description: "${description}"
+category: "${category}"
+channel: "${channel}"
+date: "${new Date().toISOString()}"
+---
+
+# ${title}
+
+${description}
+
+**Channel:** ${channel}
+**Category:** ${category}
+**Date:** ${new Date().toLocaleDateString()}`;
+                
+                // Call the WORKING endpoint
+                const response = await fetch('/api/create-md', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: fileName,
+                        channelName: channel,
+                        content: mdContent
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <h3>✅ Success!</h3>
+                        <p>File created: <strong>${data.filePath}</strong></p>
+                        <p>GitHub: <a href="${data.githubUrl}" target="_blank">View File</a></p>
+                        <p>You can now add more videos to the same channel!</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3>❌ Error</h3>
+                        <p>${data.message}</p>
+                        ${data.details ? `<pre>${JSON.stringify(data.details, null, 2)}</pre>` : ''}
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Network error: ${error.message}`;
+            }
+        }
+        
+        function generateSlug(str) {
+            return str
+                .toLowerCase()
+                .trim()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/[\s_-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+    </script>
+</body>
+</html>
