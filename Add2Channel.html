@@ -3,117 +3,415 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create MD File Test</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        
-        .container {
-            background: #f5f5f5;
-            padding: 30px;
-            border-radius: 10px;
-        }
-        
-        h1 {
-            color: #008753;
-            text-align: center;
-        }
-        
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        
-        button {
-            background: #008753;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 16px;
-        }
-        
-        button:hover {
-            background: #006641;
-        }
-        
-        .result {
-            margin-top: 20px;
-            padding: 10px;
-            background: #e9ffe9;
-            border-radius: 5px;
-            display: none;
-        }
-    </style>
+    <title>Channel Video Upload - Rwanda Cinema</title>
 </head>
 <body>
-    <div class="container">
-        <h1>Create Test MD File</h1>
+    <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+        <h1>Channel Video Upload System</h1>
         
-        <div>
-            <input type="text" id="fileName" placeholder="Enter file name (e.g., test-video)" required>
-            <input type="text" id="channelName" placeholder="Channel name (e.g., nyaxo-comedy)" required>
+        <!-- Alert Display -->
+        <div id="alert" style="padding: 15px; border-radius: 5px; margin: 20px 0; display: none;"></div>
+        
+        <!-- Step 1: Choose Input Type -->
+        <div style="margin-bottom: 30px;">
+            <h3>Step 1: Choose Input Method</h3>
+            <button onclick="showTab('website')" style="padding: 10px 20px; margin-right: 10px;">
+                From Website URL
+            </button>
+            <button onclick="showTab('youtube')" style="padding: 10px 20px;">
+                From YouTube URL
+            </button>
         </div>
         
-        <button onclick="createMdFile()">Create MD File</button>
+        <!-- Website URL Form -->
+        <div id="websiteForm" style="display: block;">
+            <h3>Enter Website Video URL</h3>
+            <div style="margin-bottom: 20px;">
+                <input type="url" id="websiteUrl" placeholder="https://rwandacinema.site/comedy/video-slug" 
+                       style="width: 100%; padding: 10px; font-size: 16px;">
+                <div style="font-size: 14px; color: #666; margin-top: 5px;">
+                    Paste your website video page URL
+                </div>
+            </div>
+            <button onclick="fetchWebsiteData()" style="padding: 12px 24px; background: #008753; color: white; border: none; cursor: pointer;">
+                Fetch Video Data
+            </button>
+        </div>
         
-        <div id="result" class="result"></div>
+        <!-- YouTube URL Form -->
+        <div id="youtubeForm" style="display: none;">
+            <h3>Enter YouTube Video URL</h3>
+            <div style="margin-bottom: 20px;">
+                <input type="url" id="youtubeUrl" placeholder="https://youtube.com/watch?v=..." 
+                       style="width: 100%; padding: 10px; font-size: 16px;">
+                <div style="font-size: 14px; color: #666; margin-top: 5px;">
+                    Paste YouTube video URL to get channel name
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h4>Your Website URL for this video:</h4>
+                <input type="url" id="websiteUrlYt" placeholder="https://rwandacinema.site/comedy/video-slug" 
+                       style="width: 100%; padding: 10px; font-size: 16px;">
+            </div>
+            
+            <button onclick="fetchYouTubeData()" style="padding: 12px 24px; background: #FF0000; color: white; border: none; cursor: pointer;">
+                Get Channel from YouTube
+            </button>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loading" style="text-align: center; padding: 20px; display: none;">
+            Loading...
+        </div>
+        
+        <!-- Preview Section -->
+        <div id="preview" style="display: none; margin: 30px 0; padding: 20px; background: #f5f5f5; border-radius: 5px;">
+            <h3>Video Details Preview</h3>
+            <div id="previewContent"></div>
+        </div>
+        
+        <!-- Channel Selection -->
+        <div style="margin: 30px 0;">
+            <h3>Step 2: Select Channel</h3>
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="channelName" placeholder="Enter channel name" 
+                       style="width: 100%; padding: 10px; font-size: 16px;">
+                <div style="font-size: 14px; color: #666; margin-top: 5px;">
+                    Video will be added to this channel
+                </div>
+            </div>
+        </div>
+        
+        <!-- Submit Button -->
+        <div>
+            <button onclick="addToChannel()" style="padding: 15px 30px; background: #333; color: white; border: none; cursor: pointer; font-size: 18px; width: 100%;">
+                Add Video to Channel JSON
+            </button>
+        </div>
+        
+        <!-- Results -->
+        <div id="results" style="margin-top: 30px; display: none; padding: 20px; background: #e9ffe9; border-radius: 5px;">
+            <h3>Upload Results</h3>
+            <div id="resultsContent"></div>
+        </div>
     </div>
 
     <script>
-        async function createMdFile() {
-            const fileName = document.getElementById('fileName').value.trim();
-            const channelName = document.getElementById('channelName').value.trim();
+        let currentVideoData = null;
+        
+        // Tab switching
+        function showTab(tab) {
+            if (tab === 'website') {
+                document.getElementById('websiteForm').style.display = 'block';
+                document.getElementById('youtubeForm').style.display = 'none';
+            } else {
+                document.getElementById('websiteForm').style.display = 'none';
+                document.getElementById('youtubeForm').style.display = 'block';
+            }
+            hidePreview();
+            hideResults();
+        }
+        
+        // Show loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        // Show alert
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.textContent = message;
+            alertDiv.style.display = 'block';
+            alertDiv.style.background = type === 'error' ? '#f8d7da' : '#d4edda';
+            alertDiv.style.color = type === 'error' ? '#721c24' : '#155724';
+            alertDiv.style.border = type === 'error' ? '1px solid #f5c6cb' : '1px solid #c3e6cb';
             
-            if (!fileName || !channelName) {
-                alert('Please fill all fields');
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Show preview
+        function showPreview(data, source) {
+            const previewDiv = document.getElementById('preview');
+            const previewContent = document.getElementById('previewContent');
+            
+            let html = '';
+            
+            if (source === 'website') {
+                html = `
+                    <div><strong>Title:</strong> ${data.title || 'Not found'}</div>
+                    <div><strong>Description:</strong> ${data.description ? data.description.substring(0, 100) + '...' : 'Not found'}</div>
+                    <div><strong>Category:</strong> ${data.category || 'Not found'}</div>
+                    <div><strong>Duration:</strong> ${data.duration || 'Not found'}</div>
+                    <div><strong>Quality:</strong> ${data.quality || 'Not found'}</div>
+                    <div><strong>Year:</strong> ${data.releaseYear || 'Not found'}</div>
+                `;
+            } else if (source === 'youtube') {
+                html = `
+                    <div><strong>Channel Found:</strong> ${data.channelName || 'Not found'}</div>
+                    <div><strong>YouTube Video:</strong> ${data.youtubeTitle || 'Not found'}</div>
+                    <div><strong>Website URL:</strong> ${data.websiteUrl || 'Not found'}</div>
+                `;
+            }
+            
+            previewContent.innerHTML = html;
+            previewDiv.style.display = 'block';
+            
+            // Auto-fill channel name from YouTube
+            if (source === 'youtube' && data.channelName) {
+                document.getElementById('channelName').value = data.channelName;
+            }
+            
+            currentVideoData = data;
+            currentVideoData.source = source;
+        }
+        
+        // Hide preview
+        function hidePreview() {
+            document.getElementById('preview').style.display = 'none';
+            currentVideoData = null;
+        }
+        
+        // Hide results
+        function hideResults() {
+            document.getElementById('results').style.display = 'none';
+        }
+        
+        // Show results
+        function showResults(message, isSuccess) {
+            const resultsDiv = document.getElementById('results');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            resultsContent.innerHTML = message;
+            resultsDiv.style.display = 'block';
+            resultsDiv.style.background = isSuccess ? '#e9ffe9' : '#ffe9e9';
+        }
+        
+        // ===== FETCH FROM WEBSITE =====
+        async function fetchWebsiteData() {
+            const websiteUrl = document.getElementById('websiteUrl').value.trim();
+            
+            if (!websiteUrl) {
+                showAlert('Please enter a website URL', 'error');
                 return;
             }
             
-            const resultDiv = document.getElementById('result');
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = 'Creating file...';
+            showLoading(true);
+            hidePreview();
             
             try {
-                const response = await fetch('/api/create-md', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        fileName: fileName,
-                        channelName: channelName,
-                        content: `# Test MD File\n\nCreated: ${new Date().toLocaleString()}\n\nThis is a test MD file for channel: ${channelName}`
-                    })
-                });
+                // Extract slug and category from URL
+                const urlObj = new URL(websiteUrl);
+                const pathParts = urlObj.pathname.split('/').filter(p => p);
                 
+                if (pathParts.length < 2) {
+                    throw new Error('Invalid URL format. Should be like: /category/video-slug');
+                }
+                
+                const category = pathParts[0];
+                const slug = pathParts[1];
+                
+                // Call API to fetch video data from GitHub
+                const response = await fetch('/api/get-video-info?url=' + encodeURIComponent(websiteUrl));
                 const data = await response.json();
                 
-                if (data.success) {
-                    resultDiv.innerHTML = `
-                        ✅ Success!<br>
-                        File created: <strong>${data.filePath}</strong><br>
-                        GitHub URL: <a href="${data.githubUrl}" target="_blank">View on GitHub</a>
-                    `;
-                    resultDiv.style.background = '#e9ffe9';
-                } else {
-                    resultDiv.innerHTML = `❌ Error: ${data.message}`;
-                    resultDiv.style.background = '#ffe9e9';
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to fetch video data');
                 }
+                
+                // Store data
+                currentVideoData = {
+                    ...data.videoData,
+                    websiteUrl: websiteUrl,
+                    slug: slug,
+                    category: category,
+                    source: 'website'
+                };
+                
+                showPreview(data.videoData, 'website');
+                showAlert('Video data fetched successfully!', 'success');
+                
             } catch (error) {
-                resultDiv.innerHTML = `❌ Network error: ${error.message}`;
-                resultDiv.style.background = '#ffe9e9';
+                showAlert('Error: ' + error.message, 'error');
+                console.error('Fetch error:', error);
+            } finally {
+                showLoading(false);
             }
         }
+        
+        // ===== FETCH FROM YOUTUBE =====
+        async function fetchYouTubeData() {
+            const youtubeUrl = document.getElementById('youtubeUrl').value.trim();
+            const websiteUrl = document.getElementById('websiteUrlYt').value.trim();
+            
+            if (!youtubeUrl) {
+                showAlert('Please enter a YouTube URL', 'error');
+                return;
+            }
+            
+            if (!websiteUrl) {
+                showAlert('Please enter your website URL for this video', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            hidePreview();
+            
+            try {
+                // Extract video ID from YouTube URL
+                const videoId = extractYouTubeId(youtubeUrl);
+                if (!videoId) {
+                    throw new Error('Invalid YouTube URL');
+                }
+                
+                // Get YouTube data
+                const youtubeData = await fetchYouTubeInfo(videoId);
+                
+                // Store data
+                currentVideoData = {
+                    channelName: youtubeData.channelName,
+                    youtubeTitle: youtubeData.title,
+                    youtubeId: videoId,
+                    websiteUrl: websiteUrl,
+                    source: 'youtube'
+                };
+                
+                // Extract slug from website URL
+                try {
+                    const urlObj = new URL(websiteUrl);
+                    const pathParts = urlObj.pathname.split('/').filter(p => p);
+                    if (pathParts.length >= 2) {
+                        currentVideoData.slug = pathParts[1];
+                        currentVideoData.category = pathParts[0];
+                    }
+                } catch (e) {
+                    console.log('Could not parse website URL');
+                }
+                
+                showPreview(currentVideoData, 'youtube');
+                showAlert('Channel data fetched from YouTube!', 'success');
+                
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+                console.error('YouTube fetch error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Extract YouTube ID
+        function extractYouTubeId(url) {
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/,
+                /youtube\.com\/embed\/([^?]+)/,
+                /youtube\.com\/v\/([^?]+)/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) {
+                    return match[1].substring(0, 11);
+                }
+            }
+            return null;
+        }
+        
+        // Fetch YouTube info (simplified)
+        async function fetchYouTubeInfo(videoId) {
+            try {
+                // Use oEmbed API
+                const response = await fetch(`https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${videoId}&format=json`);
+                const data = await response.json();
+                
+                return {
+                    title: data.title,
+                    channelName: data.author_name,
+                    thumbnail: data.thumbnail_url
+                };
+            } catch (error) {
+                // Fallback
+                return {
+                    title: 'YouTube Video',
+                    channelName: 'YouTube Channel',
+                    thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+                };
+            }
+        }
+        
+        // ===== ADD TO CHANNEL =====
+        async function addToChannel() {
+            const channelName = document.getElementById('channelName').value.trim();
+            
+            if (!channelName) {
+                showAlert('Please enter a channel name', 'error');
+                return;
+            }
+            
+            if (!currentVideoData) {
+                showAlert('Please fetch video data first', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                // Prepare data for API
+                const uploadData = {
+                    channelName: channelName,
+                    videoData: currentVideoData,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Call API to add to channel JSON
+                const response = await fetch('/api/add-to-channel-json', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(uploadData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showResults(`
+                        <div><strong>✅ Success!</strong></div>
+                        <div>Video added to channel: <strong>${channelName}</strong></div>
+                        <div>JSON File: <strong>${result.jsonFile}</strong></div>
+                        <div>Total videos in file: <strong>${result.videoCount}</strong></div>
+                        ${result.nextFile ? `<div>Next file will be: ${result.nextFile}</div>` : ''}
+                        <div style="margin-top: 10px;">
+                            <a href="${result.githubUrl}" target="_blank">View on GitHub</a>
+                        </div>
+                    `, true);
+                    
+                    showAlert('Video added to channel successfully!', 'success');
+                    
+                    // Reset form
+                    document.getElementById('websiteUrl').value = '';
+                    document.getElementById('youtubeUrl').value = '';
+                    document.getElementById('websiteUrlYt').value = '';
+                    document.getElementById('channelName').value = '';
+                    hidePreview();
+                    
+                } else {
+                    throw new Error(result.message);
+                }
+                
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+                showResults(`❌ Error: ${error.message}`, false);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Initialize
+        window.onload = function() {
+            showTab('website');
+        };
     </script>
 </body>
 </html>
