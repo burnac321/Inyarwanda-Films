@@ -33,6 +33,23 @@
       ],
       "lastUpdated": "2025-12-07T16:46:03.405Z",
       "created": "2025-12-07T16:46:03.405Z"
+    },
+    {
+      "name": "NOW NOW TV",
+      "slug": "now-now-tv",
+      "description": "NOW NOW TV - Rwandan Content",
+      "totalVideos": 1,
+      "latestVideo": {
+        "title": "1.1K",
+        "url": "https://rwandacinema.site/comedy/nyaxo-comedy-baryamanye-kubera-perime",
+        "date": "2025-12-07T16:48:14.856Z",
+        "thumbnail": "//s.ytimg.com/yts/img/meh7-vflGevej7.png"
+      },
+      "categories": [
+        "entertainment"
+      ],
+      "lastUpdated": "2025-12-07T16:48:15.896Z",
+      "created": "2025-12-07T16:48:15.896Z"
     }
   ]
 }
