@@ -1,0 +1,21 @@
+{
+  "channels": [
+    {
+      "name": "NYaxo",
+      "slug": "nyaxo",
+      "description": "NYaxo - Rwandan Content",
+      "totalVideos": 1,
+      "latestVideo": {
+        "title": "iljkds",
+        "url": "https://rwandacinema.site/comedy/nyaxo-comedy-baryamanye-kubera-perime",
+        "date": "2025-12-07T16:21:44.474Z",
+        "thumbnail": "https://via.placeholder.com/300x200"
+      },
+      "categories": [
+        "comedy"
+      ],
+      "lastUpdated": "2025-12-07T16:21:45.577Z",
+      "created": "2025-12-07T16:21:45.577Z"
+    }
+  ]
+}
