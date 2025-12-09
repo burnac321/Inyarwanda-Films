@@ -313,7 +313,7 @@ window.__h82AlnkH6D91__("WyJwdWItNzk1OTQyMTkyMTQ1NjEzMiIsW251bGwsbnVsbCxudWxsLCJ
         "@type": "${isSearchOrFilter ? 'SearchResultsPage' : 'VideoGallery'}",
         "name": "${isSearchOrFilter ? 
           `${searchQuery ? `Search: "${escapeHTML(searchQuery)}"` : capitalizeFirst(categoryFilter)} - Rwanda Cinema` : 
-          'Rwanda Cinema - Rwandan Movies and Musics Online'}",
+          'Rwanda Cinema Site'}",
         "description": "${isSearchOrFilter ? 
           `${searchQuery ? `Search results for "${escapeHTML(searchQuery)}"` : 'Browse'}${categoryFilter ? ` in ${capitalizeFirst(categoryFilter)} category` : ''} - Watch Rwandan movies online` : 
           'Watch latest Rwandan movies, Kinyarwanda comedy series, drama films and music videos online for free'}",
