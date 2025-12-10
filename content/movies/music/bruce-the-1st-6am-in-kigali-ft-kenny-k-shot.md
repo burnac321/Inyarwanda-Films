@@ -1,7 +1,7 @@
 ---
 title: "Bruce The 1st - 6AM IN KIGALI Ft Kenny K-Shot"
 releaseYear: 2025
-duration: "2 minutes 20 seconds"
+duration: "2 minutes 19 seconds"
 language: "Kinyarwanda"
 category: "music"
 rating: "PG"
