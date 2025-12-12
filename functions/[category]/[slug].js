@@ -331,8 +331,18 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7959421921456132"
-     crossorigin="anonymous"></script>
+    <!-- Adstera Ads Scripts -->
+    <!-- Ad 2: Leaderboard (728x90) -->
+    <script type="text/javascript">
+      atOptions = {
+        'key' : '0c1a394389e9b8057fb1ff87c2f59610',
+        'format' : 'iframe',
+        'height' : 90,
+        'width' : 728,
+        'params' : {}
+      };
+    </script>
+    <script type="text/javascript" src="https://blubberlog.com/0c1a394389e9b8057fb1ff87c2f59610/invoke.js"></script>
      
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="video.episode">
@@ -570,6 +580,42 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
         .breadcrumb span {
             color: var(--text-light);
             margin: 0 0.5rem;
+        }
+        
+        /* Ads Styling */
+        .ad-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+        
+        .ad-leaderboard {
+            width: 100%;
+            max-width: 728px;
+            height: 90px;
+            margin: 0 auto;
+        }
+        
+        .ad-sidebar {
+            width: 300px;
+            height: 250px;
+            margin: 1rem auto;
+        }
+        
+        .ad-native {
+            width: 100%;
+            max-width: 100%;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .video-wrapper {
@@ -1002,6 +1048,24 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
             .next-btn-text {
                 font-size: 15px;
             }
+            
+            /* Adjust ads for mobile */
+            .ad-leaderboard {
+                max-width: 100%;
+                height: auto;
+                min-height: 90px;
+            }
+            
+            .ad-sidebar {
+                width: 100%;
+                max-width: 300px;
+                height: 250px;
+            }
+            
+            .ad-native {
+                margin: 1rem 0;
+                padding: 0.5rem;
+            }
         }
         
         @media (max-width: 480px) {
@@ -1036,6 +1100,16 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
             .next-btn-icon {
                 font-size: 18px;
             }
+            
+            /* Adjust ads for small screens */
+            .ad-container {
+                margin: 1rem 0;
+                padding: 0.5rem;
+            }
+            
+            .ad-leaderboard {
+                height: 70px;
+            }
         }
     </style>
 </head>
@@ -1067,6 +1141,13 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
             </div>
         </div>
     </header>
+
+    <!-- Leaderboard Ad (728x90) - Top of page -->
+    <div class="container">
+        <div class="ad-container">
+            <div class="ad-leaderboard" id="ad-leaderboard"></div>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <main class="container" role="main">
@@ -1119,6 +1200,11 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
             
             <!-- Movie Details -->
             <div class="movie-details">
+                <!-- Sidebar Ad (300x250) - Left side -->
+                <div class="ad-container ad-sidebar" style="grid-column: 1;">
+                    <div id="ad-sidebar-1"></div>
+                </div>
+                
                 <div class="details-card">
                     <h2>Content Information</h2>
                     <div class="meta-grid">
@@ -1161,11 +1247,24 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
                         </div>` : ''}
                     </div>
                 </div>
+                
+                <!-- Sidebar Ad (300x250) - Right side -->
+                <div class="ad-container ad-sidebar" style="grid-column: 2;">
+                    <div id="ad-sidebar-2"></div>
+                </div>
             </div>
         </section>
 
         <!-- Latest Videos Section (10 random latest from same category) -->
-        ${generateVideoCards(latestVideos, `Latest ${capitalizeFirst(contentData.category)} Videos`, 'latestVideos')}
+        ${generateVideoCards(latestVideos.slice(0, 4), `Latest ${capitalizeFirst(contentData.category)} Videos`, 'latestVideos')}
+
+        <!-- Native Banner Ad - Between video sections -->
+        <div class="ad-container ad-native">
+            <div id="native-ad-1"></div>
+        </div>
+
+        <!-- Continue Latest Videos (remaining 6 videos) -->
+        ${latestVideos.length > 4 ? generateVideoCards(latestVideos.slice(4), `More ${capitalizeFirst(contentData.category)} Videos`, 'moreVideos') : ''}
 
         <!-- Related Videos Section (2 specific recommendations) -->
         ${generateVideoCards(relatedVideos, `Recommended ${capitalizeFirst(contentData.category)} Videos`, 'relatedVideos')}
@@ -1184,7 +1283,81 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
         <span class="next-btn-text">Watch More ${capitalizeFirst(contentData.category)} Videos</span>
     </a>` : ''}
 
+    <!-- Adstera Ads Implementation Script -->
     <script>
+        // Ad 1: Sidebar (300x250)
+        function loadSidebarAd1() {
+            const adScript1 = document.createElement('script');
+            adScript1.type = 'text/javascript';
+            adScript1.innerHTML = `
+                atOptions = {
+                    'key' : '213fdc3e1b3f9258d1950caae29e5874',
+                    'format' : 'iframe',
+                    'height' : 250,
+                    'width' : 300,
+                    'params' : {}
+                };
+            `;
+            document.head.appendChild(adScript1);
+            
+            const invokeScript1 = document.createElement('script');
+            invokeScript1.type = 'text/javascript';
+            invokeScript1.src = 'https://blubberlog.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js';
+            document.getElementById('ad-sidebar-1').appendChild(invokeScript1);
+        }
+        
+        // Ad 2: Sidebar (300x250) - Different placement
+        function loadSidebarAd2() {
+            const adScript2 = document.createElement('script');
+            adScript2.type = 'text/javascript';
+            adScript2.innerHTML = `
+                atOptions = {
+                    'key' : '213fdc3e1b3f9258d1950caae29e5874',
+                    'format' : 'iframe',
+                    'height' : 250,
+                    'width' : 300,
+                    'params' : {}
+                };
+            `;
+            document.head.appendChild(adScript2);
+            
+            const invokeScript2 = document.createElement('script');
+            invokeScript2.type = 'text/javascript';
+            invokeScript2.src = 'https://blubberlog.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js';
+            document.getElementById('ad-sidebar-2').appendChild(invokeScript2);
+        }
+        
+        // Load ads after page content
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load sidebar ads
+            loadSidebarAd1();
+            loadSidebarAd2();
+            
+            // Load native ad (same as sidebar but different placement)
+            setTimeout(() => {
+                const nativeAdContainer = document.getElementById('native-ad-1');
+                if (nativeAdContainer) {
+                    const adScript3 = document.createElement('script');
+                    adScript3.type = 'text/javascript';
+                    adScript3.innerHTML = `
+                        atOptions = {
+                            'key' : '213fdc3e1b3f9258d1950caae29e5874',
+                            'format' : 'iframe',
+                            'height' : 250,
+                            'width' : 300,
+                            'params' : {}
+                        };
+                    `;
+                    document.head.appendChild(adScript3);
+                    
+                    const invokeScript3 = document.createElement('script');
+                    invokeScript3.type = 'text/javascript';
+                    invokeScript3.src = 'https://blubberlog.com/213fdc3e1b3f9258d1950caae29e5874/invoke.js';
+                    nativeAdContainer.appendChild(invokeScript3);
+                }
+            }, 1000);
+        });
+        
         // Video player functionality
         const thumbnail = document.getElementById('videoThumbnail');
         const playButton = document.getElementById('playButton');
@@ -1440,8 +1613,35 @@ function generateContentPage(contentData, relatedVideos, latestVideos) {
         // Set thumbnail alt text for accessibility
         thumbnail.setAttribute('role', 'img');
         thumbnail.setAttribute('aria-label', 'Thumbnail for ${escapeHTML(contentData.title)}');
+        
+        // Ad viewability tracking (optional)
+        function trackAdView(adId) {
+            // You can implement ad view tracking here
+            console.log('Ad viewed:', adId);
+        }
+        
+        // Observe ad containers for viewability
+        const observerOptions = {
+            threshold: 0.5 // 50% visible
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const adId = entry.target.id;
+                    trackAdView(adId);
+                }
+            });
+        }, observerOptions);
+        
+        // Observe all ad containers
+        document.querySelectorAll('.ad-container > div[id^="ad-"]').forEach(container => {
+            observer.observe(container);
+        });
     </script>
-    <script type='text/javascript' src='//pl27991391.effectivegatecpm.com/a0/c2/a4/a0c2a488172371a54bbbe38d4202f89d.js'></script>
+    
+    <!-- Ad 4: Social Bar - Placed before closing body tag as requested -->
+    <script type="text/javascript" src="https://blubberlog.com/a0/c2/a4/a0c2a488172371a54bbbe38d4202f89d.js"></script>
 </body>
 </html>`;
 
